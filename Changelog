@@ -1,0 +1,38 @@
+2015-04-18 v0.8.1
+* bugfix: notepad, configuration saving
+* [mpd] +logging played songs
+
+2015-01-03 v0.8.0
+* update bootstrap and other libraries
+
+2014-12-28 v0.7.0
+* bugfixes
+* bootstrap 3.2
+* include static files in executable
+
+2014-03-28 v0.6.2
+* bugfixes
+
+2014-03-26 v0.6.1
+* bugfixes
+
+2014-03-23 v0.6
+* bugfixes
++ configurable modules
++ hosts monitoring
+
+2014-02-21  v0.5
+* new theme, features
+
+2014-01-23  v0.4
+* bootstrap, ajax
+
+2013-12-28 v0.3
+* Bugfixes 
+
+2013-12-25 v0.2
+* Bugfixes 
+
+2013-12-22 v0.1
+* Initial release
+

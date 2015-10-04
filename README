@@ -1,0 +1,39 @@
+++++++++++++++
+ rpilcd 0.x.x
+++++++++++++++
+
+:Credits: Copyright (c) Karol Będkowski, 2013-2015
+:Licence: GPLv2+
+:Status: beta
+:Tags: rpi
+
+
+Use HD44780 LCD Module to monitor Raspberry Pi.
+For now - display informations from MPD daemon, load.
+
+Building
+========
+Requirements:
+ * GoLang
+ * Libraries (go get):
+
+   * gompd (http://github.com/turbowookie/gompd/mpd)
+   * gpio (http://github.com/davecheney/gpio)
+
+Building:
+ * go get .
+ * `make` or `make build_pi` for RaspberryPi
+
+Running
+=======
+
+Local (without lcd/gpio): ./rpilcd -console=true
+
+With gpio (on RPI) - require sudo.
+
+Options
+-------
+ * `-mpdHost=pi:6600` - address:port mpd daemon
+
+
+.. vim: ft=rst tw=72
