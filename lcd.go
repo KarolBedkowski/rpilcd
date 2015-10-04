@@ -1,11 +1,11 @@
 package main
 
 import (
-	"fmt"
 	"github.com/davecheney/gpio"
 	_ "github.com/davecheney/gpio/rpi"
 	"golang.org/x/text/transform"
 	"golang.org/x/text/unicode/norm"
+	"log"
 	"strings"
 	"sync"
 	"time"
@@ -185,7 +185,7 @@ func (l *Lcd) LcdString(msg string) {
 		if len(m) < LCD_WIDTH {
 			m = m + strings.Repeat(" ", LCD_WIDTH-len(m))
 		}
-		fmt.Printf("Line: %d, msg=%v\n", line, m)
+		log.Printf("Lcd.LcdString Line: %d, msg=%v\n", line, m)
 		for i := 0; i < LCD_WIDTH; i++ {
 			l.lcdByte(m[i], LCD_CHR)
 		}
