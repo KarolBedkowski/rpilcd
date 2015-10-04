@@ -102,14 +102,9 @@ func (m *MPD) Connect() (err error) {
 
 func (m *MPD) getStatus() (s *Status) {
 	s = &Status{
-		Playing: false,
-		Flags:   "ERR",
-	}
-
-	song, err := m.connection.CurrentSong()
-	if err != nil {
-		log.Printf("mpd.getStatus: CurrentSong error: %v", err.Error())
-		return
+		Playing:     false,
+		Flags:       "ERR",
+		CurrentSong: "",
 	}
 
 	status, err := m.connection.Status()
@@ -128,6 +123,12 @@ func (m *MPD) getStatus() (s *Status) {
 	}
 	if status["random"] != "0" {
 		s.Flags += "S"
+	}
+
+	song, err := m.connection.CurrentSong()
+	if err != nil {
+		log.Printf("mpd.getStatus: CurrentSong error: %v", err.Error())
+		return
 	}
 
 	//log.Printf("Status: %+v", status)
@@ -175,6 +176,6 @@ func (m *MPD) getStatus() (s *Status) {
 		}
 	}
 
-	s.CurrentSong = strings.Join(res, " - ")
+	s.CurrentSong = strings.Join(res, "; ")
 	return
 }

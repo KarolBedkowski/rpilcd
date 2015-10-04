@@ -5,7 +5,7 @@ import (
 	_ "github.com/davecheney/gpio/rpi"
 	"golang.org/x/text/transform"
 	"golang.org/x/text/unicode/norm"
-	"log"
+	//	"log"
 	"strings"
 	"sync"
 	"time"
@@ -13,8 +13,8 @@ import (
 
 const (
 	// Timing constants
-	E_PULSE = 50 * time.Microsecond
-	E_DELAY = 50 * time.Microsecond
+	E_PULSE = 20 * time.Microsecond
+	E_DELAY = 20 * time.Microsecond
 
 	LCD_RS = 7
 	LCD_E  = 8
@@ -67,7 +67,7 @@ func pinClose(pin gpio.Pin) {
 }
 
 func InitLcd() (l *Lcd) {
-	return &Lcd{
+	l = &Lcd{
 		lcdRS: initPin(LCD_RS),
 		lcdE:  initPin(LCD_E),
 		lcdD4: initPin(LCD_D4),
@@ -75,23 +75,27 @@ func InitLcd() (l *Lcd) {
 		lcdD6: initPin(LCD_D6),
 		lcdD7: initPin(LCD_D7),
 	}
-}
-
-func (l *Lcd) lcdReset() {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	l.lcdByte(0x33, LCD_CMD)
-	l.lcdByte(0x32, LCD_CMD)
-	l.lcdByte(0x28, LCD_CMD)
-	l.lcdByte(0x0C, LCD_CMD)
-	l.lcdByte(0x06, LCD_CMD)
-	l.lcdByte(0x01, LCD_CMD)
+	l.reset()
+	return l
+}
+
+func (l *Lcd) reset() {
+	l.writeByte(0x33, LCD_CMD)
+	l.writeByte(0x32, LCD_CMD)
+	l.writeByte(0x28, LCD_CMD)
+	l.writeByte(0x0C, LCD_CMD)
+	l.writeByte(0x06, LCD_CMD)
+	l.writeByte(0x01, LCD_CMD)
 }
 
 func (l *Lcd) Close() {
 	l.mu.Lock()
 	defer l.mu.Unlock()
+
+	l.reset()
 	pinClose(l.lcdRS)
 	pinClose(l.lcdE)
 	pinClose(l.lcdD4)
@@ -100,8 +104,8 @@ func (l *Lcd) Close() {
 	pinClose(l.lcdD7)
 }
 
-// lcdByte send byte to lcd
-func (l *Lcd) lcdByte(bits uint8, characterMode bool) {
+// writeByte send byte to lcd
+func (l *Lcd) writeByte(bits uint8, characterMode bool) {
 	if characterMode {
 		l.lcdRS.Set()
 	} else {
@@ -166,16 +170,16 @@ func (l *Lcd) lcdByte(bits uint8, characterMode bool) {
 	time.Sleep(E_DELAY)
 }
 
-func (l *Lcd) LcdString(msg string) {
+func (l *Lcd) Display(msg string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
 	for line, m := range strings.Split(msg, "\n") {
 		switch line {
 		case 0:
-			l.lcdByte(LCD_LINE_1, LCD_CMD)
+			l.writeByte(LCD_LINE_1, LCD_CMD)
 		case 1:
-			l.lcdByte(LCD_LINE_2, LCD_CMD)
+			l.writeByte(LCD_LINE_2, LCD_CMD)
 		default:
 			return
 		}
@@ -185,9 +189,9 @@ func (l *Lcd) LcdString(msg string) {
 		if len(m) < LCD_WIDTH {
 			m = m + strings.Repeat(" ", LCD_WIDTH-len(m))
 		}
-		log.Printf("Lcd.LcdString Line: %d, msg=%v\n", line, m)
+		//log.Printf("Lcd.LcdString Line: %d, msg=%v\n", line, m)
 		for i := 0; i < LCD_WIDTH; i++ {
-			l.lcdByte(m[i], LCD_CHR)
+			l.writeByte(m[i], LCD_CHR)
 		}
 	}
 }

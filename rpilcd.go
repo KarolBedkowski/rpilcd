@@ -1,31 +1,60 @@
 package main
 
 import (
+	"bytes"
 	"flag"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
 	"strings"
-	"sync"
 	"syscall"
 	"time"
 )
 
 var AppVersion = "dev"
 
+type Display interface {
+	Display(string)
+	Close()
+}
+
+type SimpleDisplay struct{}
+
+func (sd *SimpleDisplay) Display(text string) {
+	for i, l := range strings.Split(text, "\n") {
+		log.Printf("SimpleDisplay: [%d] '%s'", i, l)
+	}
+}
+
+func (sd *SimpleDisplay) Close() {
+}
+
 func main() {
+	log.Printf("RPI LCD ver %s starting...", AppVersion)
+
+	soutput := flag.Bool("console", false, "Print on console instead of lcd")
+	refreshInt := flag.Int64("interval", 500, "Interval between lcd updates in ms")
 
 	flag.Parse()
 
-	lcd := InitLcd()
-	lcd.LcdString("\n")
+	log.Printf("Interval: %d ms", *refreshInt)
+
+	var disp Display
+	if *soutput {
+		disp = &SimpleDisplay{}
+	} else {
+		disp = InitLcd()
+	}
+
+	disp.Display("\n")
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	signal.Notify(c, syscall.SIGTERM)
 	go func() {
 		for _ = range c {
-			//lcd.Close()
+			disp.Close()
 			os.Exit(0)
 		}
 	}()
@@ -45,88 +74,40 @@ func main() {
 	log.Printf("main: entering loop")
 
 	ts := NewTextScroller(LCD_WIDTH)
-	ticker := time.NewTicker(1 * time.Second)
+	ticker := time.NewTicker(time.Duration(*refreshInt) * time.Millisecond)
 
 	for {
 		select {
 		case msg := <-mpd.Message:
-			ts.Set(msg.String())
-			//log.Printf("main.msg: %v", msg)
+			ts.Set(formatData(msg))
 		case <-ticker.C:
 			text := ts.Tick()
-			log.Printf("main.msg: %v", text)
-			lcd.LcdString(text)
+			disp.Display(text)
 		}
 	}
 }
 
-type textScrollerLine struct {
-	lineOrg    string
-	line       string
-	needScroll bool
+func formatData(s *Status) string {
+	if s.Playing {
+		if s.Status == "play" {
+			return loadAvg() + " | " + s.Flags + s.Volume + "\n" + s.CurrentSong
+		} else {
+			return loadAvg() + " | " + s.Status + " " + s.Volume + "\n" + s.CurrentSong
+		}
+	}
+
+	n := time.Now()
+	return loadAvg() + " | " + s.Status + "\n " + n.Format("01-02 15:04:05")
 }
 
-func (tsl *textScrollerLine) set(inp string, width int) {
-	log.Printf("textScrollerLine.set : %+v", inp)
-	if inp == tsl.lineOrg {
-		return
-	}
-	tsl.lineOrg = inp
-	tsl.needScroll = len(inp) > width
-	if tsl.needScroll {
-		tsl.line = inp + " | "
+func loadAvg() string {
+	if data, err := ioutil.ReadFile("/proc/loadavg"); err == nil {
+		i := bytes.IndexRune(data, ' ')
+		if i > 0 {
+			return string(data[:i])
+		}
 	} else {
-		if len(inp) < width {
-			inp += strings.Repeat(" ", width-len(inp))
-		}
-		tsl.line = inp
+		log.Printf("loadavg errorL %v", err)
 	}
-}
-
-func (tsl *textScrollerLine) scroll() string {
-	if tsl.needScroll {
-		line := tsl.line[1:] + string(tsl.line[0])
-		tsl.line = line
-	}
-	return tsl.line
-}
-
-type TextScroller struct {
-	Width int
-	lines []*textScrollerLine
-
-	mu sync.Mutex
-}
-
-func NewTextScroller(width int) *TextScroller {
-	res := &TextScroller{
-		Width: width,
-	}
-	for i := 0; i < 2; i++ {
-		l := &textScrollerLine{}
-		l.set("  ", width)
-		res.lines = append(res.lines, l)
-	}
-	return res
-}
-
-func (t *TextScroller) Set(text string) {
-	log.Printf("TextScroller.Set: %v", text)
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	for line, l := range strings.Split(text, "\n") {
-		if line >= 2 {
-			return
-		}
-		t.lines[line].set(l, t.Width)
-	}
-}
-
-func (t *TextScroller) Tick() (res string) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	for _, l := range t.lines {
-		res += l.scroll()[:t.Width] + "\n"
-	}
-	return strings.TrimRight(res, "\n")
+	return ""
 }
