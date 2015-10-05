@@ -61,11 +61,6 @@ func initPin(pin int) gpio.Pin {
 	return nil
 }
 
-func pinClose(pin gpio.Pin) {
-	pin.Clear()
-	pin.Close()
-}
-
 func InitLcd() (l *Lcd) {
 	l = &Lcd{
 		lcdRS: initPin(LCD_RS),
@@ -75,8 +70,8 @@ func InitLcd() (l *Lcd) {
 		lcdD6: initPin(LCD_D6),
 		lcdD7: initPin(LCD_D7),
 	}
-	l.mu.Lock()
-	defer l.mu.Unlock()
+	//	l.mu.Lock()
+	//	defer l.mu.Unlock()
 
 	l.reset()
 	return l
@@ -92,16 +87,22 @@ func (l *Lcd) reset() {
 }
 
 func (l *Lcd) Close() {
-	l.mu.Lock()
-	defer l.mu.Unlock()
+	//	l.mu.Lock()
+	//	defer l.mu.Unlock()
 
 	l.reset()
-	pinClose(l.lcdRS)
-	pinClose(l.lcdE)
-	pinClose(l.lcdD4)
-	pinClose(l.lcdD5)
-	pinClose(l.lcdD6)
-	pinClose(l.lcdD7)
+	l.lcdRS.Clear()
+	l.lcdRS.Close()
+	l.lcdE.Clear()
+	l.lcdE.Close()
+	l.lcdD4.Clear()
+	l.lcdD4.Close()
+	l.lcdD5.Clear()
+	l.lcdD5.Close()
+	l.lcdD6.Clear()
+	l.lcdD6.Close()
+	l.lcdD7.Clear()
+	l.lcdD7.Close()
 }
 
 // writeByte send byte to lcd
@@ -171,8 +172,8 @@ func (l *Lcd) writeByte(bits uint8, characterMode bool) {
 }
 
 func (l *Lcd) Display(msg string) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
+	//	l.mu.Lock()
+	//	defer l.mu.Unlock()
 
 	for line, m := range strings.Split(msg, "\n") {
 		switch line {
@@ -184,7 +185,7 @@ func (l *Lcd) Display(msg string) {
 			return
 		}
 
-		m = removeNlChars(m)
+		//m = removeNlChars(m)
 
 		if len(m) < LCD_WIDTH {
 			m = m + strings.Repeat(" ", LCD_WIDTH-len(m))

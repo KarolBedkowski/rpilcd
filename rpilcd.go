@@ -5,6 +5,8 @@ import (
 	"flag"
 	"io/ioutil"
 	"log"
+	//	"net/http"
+	//	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"strings"
@@ -31,6 +33,11 @@ func (sd *SimpleDisplay) Close() {
 }
 
 func main() {
+
+	//	go func() {
+	//		log.Println(http.ListenAndServe(":6060", nil))
+	//	}()
+
 	log.Printf("RPI LCD ver %s starting...", AppVersion)
 
 	soutput := flag.Bool("console", false, "Print on console instead of lcd")
@@ -54,6 +61,7 @@ func main() {
 	signal.Notify(c, syscall.SIGTERM)
 	go func() {
 		for _ = range c {
+			log.Printf("Closing")
 			disp.Close()
 			os.Exit(0)
 		}
@@ -90,9 +98,9 @@ func main() {
 func formatData(s *Status) string {
 	if s.Playing {
 		if s.Status == "play" {
-			return loadAvg() + " | " + s.Flags + s.Volume + "\n" + s.CurrentSong
+			return loadAvg() + " | " + s.Flags + s.Volume + "\n" + removeNlChars(s.CurrentSong)
 		} else {
-			return loadAvg() + " | " + s.Status + " " + s.Volume + "\n" + s.CurrentSong
+			return loadAvg() + " | " + s.Status + " " + s.Volume + "\n" + removeNlChars(s.CurrentSong)
 		}
 	}
 

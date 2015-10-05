@@ -32,9 +32,8 @@ func (s *Status) String() string {
 }
 
 type MPD struct {
-	Message    chan *Status
-	connection *mpd.Client
-	watcher    *mpd.Watcher
+	Message chan *Status
+	watcher *mpd.Watcher
 }
 
 func NewMPD() *MPD {
@@ -79,33 +78,11 @@ func (m *MPD) watch() (err error) {
 }
 
 func (m *MPD) Connect() (err error) {
-	_, err = m.getConnection()
-	if err != nil {
-		return
-	}
 	err = m.watch()
 	if err != nil {
 		log.Printf("mpd.Connect: start watch error: %v", err)
 	}
 	return
-}
-
-func (m *MPD) getConnection() (con *mpd.Client, err error) {
-	if m.connection != nil {
-		if err = m.connection.Ping(); err != nil {
-			m.connection.Close()
-			m.connection = nil
-		}
-	}
-	if m.connection == nil {
-		m.connection, err = mpd.Dial("tcp", *mpdHost)
-		if err != nil {
-			log.Printf("mpd.Connect: connect do %s error: %v", *mpdHost, err.Error())
-			return nil, err
-		}
-		log.Printf("mpd.Connect: connected to %s", *mpdHost)
-	}
-	return m.connection, err
 }
 
 func (m *MPD) getStatus() (s *Status) {
@@ -115,10 +92,14 @@ func (m *MPD) getStatus() (s *Status) {
 		CurrentSong: "",
 	}
 
-	con, err := m.getConnection()
+	con, err := mpd.Dial("tcp", *mpdHost)
 	if err != nil {
+		log.Printf("mpd.Connect: connect do %s error: %v", *mpdHost, err.Error())
 		return
 	}
+	log.Printf("mpd.Connect: connected to %s", *mpdHost)
+
+	defer con.Close()
 
 	status, err := con.Status()
 	if err != nil {
