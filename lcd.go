@@ -49,7 +49,10 @@ type Lcd struct {
 	lcdD6 gpio.Pin
 	lcdD7 gpio.Pin
 
-	mu sync.Mutex
+	line1 string
+	line2 string
+
+	sync.Mutex
 }
 
 func initPin(pin int) gpio.Pin {
@@ -70,8 +73,8 @@ func InitLcd() (l *Lcd) {
 		lcdD6: initPin(LCD_D6),
 		lcdD7: initPin(LCD_D7),
 	}
-	//	l.mu.Lock()
-	//	defer l.mu.Unlock()
+	l.Lock()
+	defer l.Unlock()
 
 	l.reset()
 	return l
@@ -87,8 +90,8 @@ func (l *Lcd) reset() {
 }
 
 func (l *Lcd) Close() {
-	//	l.mu.Lock()
-	//	defer l.mu.Unlock()
+	l.Lock()
+	defer l.Unlock()
 
 	l.reset()
 	l.lcdRS.Clear()
@@ -172,24 +175,32 @@ func (l *Lcd) writeByte(bits uint8, characterMode bool) {
 }
 
 func (l *Lcd) Display(msg string) {
-	//	l.mu.Lock()
-	//	defer l.mu.Unlock()
+	l.Lock()
+	defer l.Unlock()
 
 	for line, m := range strings.Split(msg, "\n") {
+		//m = removeNlChars(m)
+		if len(m) < LCD_WIDTH {
+			m = m + strings.Repeat(" ", LCD_WIDTH-len(m))
+		}
+
 		switch line {
 		case 0:
+			if l.line1 == m {
+				continue
+			}
+			l.line1 = m
 			l.writeByte(LCD_LINE_1, LCD_CMD)
 		case 1:
+			if l.line2 == m {
+				continue
+			}
+			l.line2 = m
 			l.writeByte(LCD_LINE_2, LCD_CMD)
 		default:
 			return
 		}
 
-		//m = removeNlChars(m)
-
-		if len(m) < LCD_WIDTH {
-			m = m + strings.Repeat(" ", LCD_WIDTH-len(m))
-		}
 		//log.Printf("Lcd.LcdString Line: %d, msg=%v\n", line, m)
 		for i := 0; i < LCD_WIDTH; i++ {
 			l.writeByte(m[i], LCD_CHR)
