@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/davecheney/gpio"
-	_ "github.com/davecheney/gpio/rpi"
+	"github.com/davecheney/gpio/rpi"
 	"golang.org/x/text/transform"
 	"golang.org/x/text/unicode/norm"
 	//	"log"
@@ -56,7 +56,7 @@ type Lcd struct {
 }
 
 func initPin(pin int) gpio.Pin {
-	if pin, err := gpio.OpenPin(pin, gpio.ModeOutput); err == nil {
+	if pin, err := rpi.OpenPin(pin, gpio.ModeOutput); err == nil {
 		return pin
 	} else {
 		panic(err)
