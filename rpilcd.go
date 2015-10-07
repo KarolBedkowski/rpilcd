@@ -13,8 +13,10 @@ import (
 	"time"
 )
 
+// AppVersion global var
 var AppVersion = "dev"
 
+// Display (output) interface
 type Display interface {
 	Display(string)
 	Close()
@@ -65,7 +67,7 @@ func main() {
 
 	log.Printf("main: entering loop")
 
-	ts := NewTextScroller(LCD_WIDTH)
+	ts := NewTextScroller(lcdWidth)
 	ticker := time.NewTicker(time.Duration(*refreshInt) * time.Millisecond)
 
 	sig := make(chan os.Signal, 1)
@@ -88,9 +90,8 @@ func formatData(s *Status) string {
 	if s.Playing {
 		if s.Status == "play" {
 			return loadAvg() + " | " + s.Flags + s.Volume + "\n" + removeNlChars(s.CurrentSong)
-		} else {
-			return loadAvg() + " | " + s.Status + " " + s.Volume + "\n" + removeNlChars(s.CurrentSong)
 		}
+		return loadAvg() + " | " + s.Status + " " + s.Volume + "\n" + removeNlChars(s.CurrentSong)
 	}
 
 	n := time.Now()

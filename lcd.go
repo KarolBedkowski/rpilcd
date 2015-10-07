@@ -13,23 +13,23 @@ import (
 
 const (
 	// Timing constants
-	E_PULSE = 50 * time.Microsecond
-	E_DELAY = 50 * time.Microsecond
+	ePulse = 50 * time.Microsecond
+	eDelay = 50 * time.Microsecond
 
-	LCD_RS = 7
-	LCD_E  = 8
-	LCD_D4 = 25
-	LCD_D5 = 24
-	LCD_D6 = 23
-	LCD_D7 = 18
+	lcdRS = 7
+	lcdE  = 8
+	lcdD4 = 25
+	lcdD5 = 24
+	lcdD6 = 23
+	lcdD7 = 18
 
 	// Define some device constants
-	LCD_WIDTH = 16 // Maximum characters per line
-	LCD_CHR   = true
-	LCD_CMD   = false
+	lcdWidth = 16 // Maximum characters per line
+	lcdChr   = true
+	lcdCmd   = false
 
-	LCD_LINE_1 = 0x80 // LCD RAM address for the 1st line
-	LCD_LINE_2 = 0xC0 // LCD RAM address for the 2nd line
+	lcdLine1 = 0x80 // LCD RAM address for the 1st line
+	lcdLine2 = 0xC0 // LCD RAM address for the 2nd line
 )
 
 func removeNlChars(str string) string {
@@ -41,6 +41,7 @@ func removeNlChars(str string) string {
 	return str
 }
 
+// Lcd output
 type Lcd struct {
 	sync.Mutex
 
@@ -59,14 +60,15 @@ type Lcd struct {
 	end chan bool
 }
 
+// NewLcd create and init new lcd output
 func NewLcd() (l *Lcd) {
 	l = &Lcd{
-		lcdRS:  initPin(LCD_RS),
-		lcdE:   initPin(LCD_E),
-		lcdD4:  initPin(LCD_D4),
-		lcdD5:  initPin(LCD_D5),
-		lcdD6:  initPin(LCD_D6),
-		lcdD7:  initPin(LCD_D7),
+		lcdRS:  initPin(lcdRS),
+		lcdE:   initPin(lcdE),
+		lcdD4:  initPin(lcdD4),
+		lcdD5:  initPin(lcdD5),
+		lcdD6:  initPin(lcdD6),
+		lcdD7:  initPin(lcdD7),
 		active: true,
 		msg:    make(chan string),
 		end:    make(chan bool),
@@ -87,10 +89,12 @@ func NewLcd() (l *Lcd) {
 	return l
 }
 
+// Display show some message
 func (l *Lcd) Display(msg string) {
 	l.msg <- msg
 }
 
+// Close LCD
 func (l *Lcd) Close() {
 	log.Printf("Lcd.Close")
 	if l.active {
@@ -98,23 +102,23 @@ func (l *Lcd) Close() {
 	}
 }
 
-func initPin(pin int) gpio.Pin {
-	if pin, err := rpi.OpenPin(pin, gpio.ModeOutput); err == nil {
-		return pin
-	} else {
+func initPin(pin int) (p gpio.Pin) {
+	var err error
+	p, err = rpi.OpenPin(pin, gpio.ModeOutput)
+	if err != nil {
 		panic(err)
 	}
-	return nil
+	return
 }
 
 func (l *Lcd) reset() {
 	log.Printf("Lcd.reset()")
-	l.writeByte(0x33, LCD_CMD) // 110011 Initialise
-	l.writeByte(0x32, LCD_CMD) // 110010 Initialise
-	l.writeByte(0x28, LCD_CMD) // 101000 Data length, number of lines, font size
-	l.writeByte(0x0C, LCD_CMD) // 001100 Display On,Cursor Off, Blink Off
-	l.writeByte(0x06, LCD_CMD) // 000110 Cursor move direction
-	l.writeByte(0x01, LCD_CMD) // 000001 Clear display
+	l.writeByte(0x33, lcdCmd) // 110011 Initialise
+	l.writeByte(0x32, lcdCmd) // 110010 Initialise
+	l.writeByte(0x28, lcdCmd) // 101000 Data length, number of lines, font size
+	l.writeByte(0x0C, lcdCmd) // 001100 Display On,Cursor Off, Blink Off
+	l.writeByte(0x06, lcdCmd) // 000110 Cursor move direction
+	l.writeByte(0x01, lcdCmd) // 000001 Clear display
 }
 
 func (l *Lcd) close() {
@@ -174,11 +178,11 @@ func (l *Lcd) writeByte(bits uint8, characterMode bool) {
 	}
 
 	// Toggle 'Enable' pin
-	time.Sleep(E_DELAY)
+	time.Sleep(eDelay)
 	l.lcdE.Set()
-	time.Sleep(E_PULSE)
+	time.Sleep(ePulse)
 	l.lcdE.Clear()
-	time.Sleep(E_DELAY)
+	time.Sleep(eDelay)
 
 	// Low bits
 	if bits&0x01 == 0x01 {
@@ -202,11 +206,11 @@ func (l *Lcd) writeByte(bits uint8, characterMode bool) {
 		l.lcdD7.Clear()
 	}
 	// Toggle 'Enable' pin
-	time.Sleep(E_DELAY)
+	time.Sleep(eDelay)
 	l.lcdE.Set()
-	time.Sleep(E_PULSE)
+	time.Sleep(ePulse)
 	l.lcdE.Clear()
-	time.Sleep(E_DELAY)
+	time.Sleep(eDelay)
 }
 
 func (l *Lcd) display(msg string) {
@@ -219,8 +223,8 @@ func (l *Lcd) display(msg string) {
 
 	for line, m := range strings.Split(msg, "\n") {
 		//m = removeNlChars(m)
-		if len(m) < LCD_WIDTH {
-			m = m + strings.Repeat(" ", LCD_WIDTH-len(m))
+		if len(m) < lcdWidth {
+			m = m + strings.Repeat(" ", lcdWidth-len(m))
 		}
 
 		switch line {
@@ -229,20 +233,20 @@ func (l *Lcd) display(msg string) {
 				continue
 			}
 			l.line1 = m
-			l.writeByte(LCD_LINE_1, LCD_CMD)
+			l.writeByte(lcdLine1, lcdCmd)
 		case 1:
-			if l.line2 != m {
+			if l.line2 == m {
 				continue
 			}
 			l.line2 = m
-			l.writeByte(LCD_LINE_2, LCD_CMD)
+			l.writeByte(lcdLine2, lcdCmd)
 		default:
 			return
 		}
 
 		//log.Printf("Lcd.LcdString Line: %d, msg=%v\n", line, m)
-		for i := 0; i < LCD_WIDTH; i++ {
-			l.writeByte(m[i], LCD_CHR)
+		for i := 0; i < lcdWidth; i++ {
+			l.writeByte(m[i], lcdChr)
 		}
 	}
 }

@@ -37,6 +37,7 @@ func (tsl *textScrollerLine) scroll() string {
 	return tsl.line
 }
 
+// TextScroller format some text to display in few character display
 type TextScroller struct {
 	Width int
 	lines []*textScrollerLine
@@ -44,6 +45,7 @@ type TextScroller struct {
 	mu sync.Mutex
 }
 
+// NewTextScroller create new TextScroller struct
 func NewTextScroller(width int) *TextScroller {
 	res := &TextScroller{
 		Width: width,
@@ -56,6 +58,7 @@ func NewTextScroller(width int) *TextScroller {
 	return res
 }
 
+// Set put some text to TextScroller
 func (t *TextScroller) Set(text string) {
 	log.Printf("TextScroller.Set: %v", text)
 	t.mu.Lock()
@@ -65,6 +68,7 @@ func (t *TextScroller) Set(text string) {
 	}
 }
 
+// Tick reformat (scroll) long messages and return formated text
 func (t *TextScroller) Tick() (res string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()

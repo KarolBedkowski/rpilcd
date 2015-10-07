@@ -13,6 +13,7 @@ var (
 	mpdHost = flag.String("mpdHost", "pi:6600", "MPD address")
 )
 
+// Status of MPD daemon
 type Status struct {
 	CurrentSong string
 	Playing     bool
@@ -25,13 +26,13 @@ func (s *Status) String() string {
 	if s.Playing {
 		if s.Status == "play" {
 			return s.Flags + s.Volume + "\n" + s.CurrentSong
-		} else {
-			return s.Status + " " + s.Volume + "\n" + s.CurrentSong
 		}
+		return s.Status + " " + s.Volume + "\n" + s.CurrentSong
 	}
 	return s.Status
 }
 
+// MPD client
 type MPD struct {
 	Message chan *Status
 	watcher *mpd.Watcher
@@ -39,6 +40,7 @@ type MPD struct {
 	active  bool
 }
 
+// NewMPD create new MPD client
 func NewMPD() *MPD {
 	return &MPD{
 		Message: make(chan *Status),
@@ -90,6 +92,7 @@ func (m *MPD) watch() (err error) {
 	return nil
 }
 
+// Connect to mpd daemon
 func (m *MPD) Connect() (err error) {
 
 	go func() {
@@ -103,6 +106,7 @@ func (m *MPD) Connect() (err error) {
 	return
 }
 
+// Close MPD client
 func (m *MPD) Close() {
 	log.Printf("mpd.Close")
 	m.active = false
@@ -154,7 +158,7 @@ func (m *MPD) getStatus() (s *Status) {
 	//log.Printf("Status: %+v", status)
 	//log.Printf("Song: %+v", song)
 
-	res := make([]string, 0)
+	var res []string
 
 	currsongnum := ""
 	if a, ok := status["song"]; ok {

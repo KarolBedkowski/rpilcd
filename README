@@ -14,7 +14,7 @@ For now - display informations from MPD daemon, load.
 Building
 ========
 Requirements:
- * GoLang
+ * GoLang 1.4, 1.5 (v1.4 on rpi don't handle signals)
  * Libraries (go get):
 
    * gompd (http://github.com/turbowookie/gompd/mpd)

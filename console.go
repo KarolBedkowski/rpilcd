@@ -8,20 +8,25 @@ import (
 )
 
 const (
-	consoleDelay = (E_DELAY*4 + E_PULSE*2) * LCD_WIDTH
+	consoleDelay = (eDelay*4 + ePulse*2) * lcdWidth
 )
 
+// Console simulate lcd without physical lcd
 type Console struct {
 	sync.Mutex
+
+	active bool
 
 	msg chan string
 	end chan bool
 }
 
+// NewConsole create and init new console output
 func NewConsole() (l *Console) {
 	l = &Console{
-		msg: make(chan string),
-		end: make(chan bool),
+		active: true,
+		msg:    make(chan string),
+		end:    make(chan bool),
 	}
 	go func() {
 		for {
@@ -30,6 +35,7 @@ func NewConsole() (l *Console) {
 				l.display(msg)
 
 			case _ = <-l.end:
+				l.close()
 				break
 			}
 		}
@@ -37,13 +43,28 @@ func NewConsole() (l *Console) {
 	return l
 }
 
+// Display show some message
 func (l *Console) Display(msg string) {
 	l.msg <- msg
 }
 
+// Close console
 func (l *Console) Close() {
 	log.Printf("Console close")
-	l.end <- true
+	if l.active {
+		l.end <- true
+	}
+}
+
+func (l *Console) close() {
+	l.Lock()
+	defer l.Unlock()
+
+	if !l.active {
+		return
+	}
+
+	l.active = false
 }
 
 func (l *Console) display(text string) {
