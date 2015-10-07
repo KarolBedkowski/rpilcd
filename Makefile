@@ -1,6 +1,7 @@
-VERSION=`git describe --always`
-DATE=`date`
-LDFLAGS=-X main.AppVersion '$(VERSION) - $(DATE)'
+VERSION:=$(shell git describe --always)
+DATE:=$(shell date)
+VERS:=$(VERSION) - $(DATE)
+LDFLAGS:=-X main.AppVersion '$(VERS)'
 # -gcflags "-N -l"
 
 .PHONY: build
@@ -10,7 +11,7 @@ build:
 	#GOGCCFLAGS="-g -s -march=native" go build -ldflags $(LDFLAGS)
 
 build_pi: 
-	CGO_ENABLED="0" GOGCCFLAGS="-fPIC -O4 -Ofast -march=native -s" GOARCH=arm GOARM=5 go build -o rpilcd -ldflags "$(LDFLAGS) -w"
+	CGO_ENABLED="0" GOGCCFLAGS="-fPIC -O4 -Ofast -march=native -s" GOARCH=arm go build -o rpilcd -ldflags "$(LDFLAGS) -w"
 	#CGO_ENABLED="0" GOGCCFLAGS="-g -fPIC -march=native -s" GOARCH=arm GOARM=5 go build -o rpilcd -ldflags $(LDFLAGS)
 
 run: 

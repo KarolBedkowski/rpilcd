@@ -33,12 +33,14 @@ func main() {
 
 	flag.Parse()
 
-	log.Printf("Interval: %d ms", *refreshInt)
+	log.Printf("main: interval: %d ms", *refreshInt)
 
 	var disp Display
 	if *soutput {
+		log.Printf("main: starting console")
 		disp = NewConsole()
 	} else {
+		log.Printf("main: starting lcd")
 		disp = NewLcd()
 	}
 
@@ -49,12 +51,12 @@ func main() {
 		if e := recover(); e != nil {
 			log.Printf("Recover: %v", e)
 		}
-		log.Printf("Closing disp")
+		log.Printf("main.defer: closing disp")
 		disp.Close()
-		log.Printf("Closing mpd")
+		log.Printf("main.defer: closing mpd")
 		mpd.Close()
 		time.Sleep(2 * time.Second)
-		log.Printf("Closed")
+		log.Printf("main.defer: all closed")
 	}()
 
 	mpd.Connect()
@@ -68,8 +70,6 @@ func main() {
 
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt, os.Kill)
-	//	signal.Notify(sig, syscall.SIGTERM, syscall.SIGINT, syscall.SIGKILL, syscall.SIGSTOP,
-	//		syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGABRT, syscall.SIGSEGV, syscall.SIGCHLD)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 	for {
 		select {
@@ -78,8 +78,7 @@ func main() {
 		case <-ticker.C:
 			text := ts.Tick()
 			disp.Display(text)
-		case sig := <-sig:
-			log.Printf("Signal %v", sig)
+		case _ = <-sig:
 			return
 		}
 	}
@@ -105,7 +104,7 @@ func loadAvg() string {
 			return string(data[:i])
 		}
 	} else {
-		log.Printf("loadavg errorL %v", err)
+		log.Printf("main.loadavg error: %v", err)
 	}
 	return ""
 }

@@ -3,9 +3,17 @@ package main
 import (
 	"log"
 	"strings"
+	"sync"
+	"time"
+)
+
+const (
+	consoleDelay = (E_DELAY*4 + E_PULSE*2) * LCD_WIDTH
 )
 
 type Console struct {
+	sync.Mutex
+
 	msg chan string
 	end chan bool
 }
@@ -19,9 +27,7 @@ func NewConsole() (l *Console) {
 		for {
 			select {
 			case msg := <-l.msg:
-				for i, l := range strings.Split(msg, "\n") {
-					log.Printf("SimpleDisplay: [%d] '%s'", i, l)
-				}
+				l.display(msg)
 
 			case _ = <-l.end:
 				break
@@ -38,4 +44,13 @@ func (l *Console) Display(msg string) {
 func (l *Console) Close() {
 	log.Printf("Console close")
 	l.end <- true
+}
+
+func (l *Console) display(text string) {
+	l.Lock()
+	defer l.Unlock()
+	for i, l := range strings.Split(text, "\n") {
+		log.Printf("SimpleDisplay: [%d] '%s'", i, l)
+		time.Sleep(consoleDelay)
+	}
 }

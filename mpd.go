@@ -50,21 +50,20 @@ func NewMPD() *MPD {
 func (m *MPD) watch() (err error) {
 	m.watcher, err = mpd.NewWatcher("tcp", *mpdHost, "")
 	if err != nil {
-		log.Printf("mpd.watcher: connect to %v error: %v", *mpdHost, err.Error())
+		log.Printf("mpd.watch: connect to %v error: %v", *mpdHost, err.Error())
 		return err
 	}
-	log.Printf("mpd.watcher: connected to %v", *mpdHost)
+	log.Printf("mpd.watch: connected to %v", *mpdHost)
 
 	defer func() {
-		log.Println("mpd.watcher: closing")
+		log.Println("mpd.watch: closing")
 		if m.watcher != nil {
 			m.watcher.Close()
 			m.watcher = nil
 		}
-		log.Println("mpd.watcher: defered")
 	}()
 
-	log.Println("mpd.watcher: starting watch")
+	log.Println("mpd.watch: starting watch")
 
 	m.Message <- m.getStatus()
 
@@ -74,16 +73,16 @@ func (m *MPD) watch() (err error) {
 		}
 		select {
 		case _ = <-m.end:
-			log.Printf("mpd.watcher - end")
+			log.Printf("mpd.watch: end")
 			return
 		case subsystem := <-m.watcher.Event:
-			log.Printf("mpd.watcher - event: %v", subsystem)
+			log.Printf("mpd.watch: event: %v", subsystem)
 			switch subsystem {
 			case "player":
 				m.Message <- m.getStatus()
 			}
 		case err := <-m.watcher.Error:
-			log.Printf("mpd.watcher: error event: %v", err)
+			log.Printf("mpd.watch: error event: %v", err)
 			break
 		}
 	}
@@ -95,9 +94,7 @@ func (m *MPD) Connect() (err error) {
 
 	go func() {
 		for m.active {
-
-			err = m.watch()
-			if err != nil {
+			if err = m.watch(); err != nil {
 				log.Printf("mpd.Connect: start watch error: %v", err)
 			}
 			time.Sleep(5 * time.Second)
@@ -107,7 +104,7 @@ func (m *MPD) Connect() (err error) {
 }
 
 func (m *MPD) Close() {
-	log.Printf("mpd close")
+	log.Printf("mpd.Close")
 	m.active = false
 	if m.watcher != nil {
 		m.end <- true
@@ -123,10 +120,10 @@ func (m *MPD) getStatus() (s *Status) {
 
 	con, err := mpd.Dial("tcp", *mpdHost)
 	if err != nil {
-		log.Printf("mpd.Connect: connect do %s error: %v", *mpdHost, err.Error())
+		log.Printf("mpd.getStatus: connect do %s error: %v", *mpdHost, err.Error())
 		return
 	}
-	log.Printf("mpd.Connect: connected to %s", *mpdHost)
+	log.Printf("mpd.getStatus: connected to %s", *mpdHost)
 
 	defer con.Close()
 

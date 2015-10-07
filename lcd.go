@@ -42,6 +42,8 @@ func removeNlChars(str string) string {
 }
 
 type Lcd struct {
+	sync.Mutex
+
 	lcdRS gpio.Pin
 	lcdE  gpio.Pin
 	lcdD4 gpio.Pin
@@ -53,14 +55,24 @@ type Lcd struct {
 	line2  string
 	active bool
 
-	sync.Mutex
-
 	msg chan string
 	end chan bool
 }
 
 func NewLcd() (l *Lcd) {
-	l = initLcd()
+	l = &Lcd{
+		lcdRS:  initPin(LCD_RS),
+		lcdE:   initPin(LCD_E),
+		lcdD4:  initPin(LCD_D4),
+		lcdD5:  initPin(LCD_D5),
+		lcdD6:  initPin(LCD_D6),
+		lcdD7:  initPin(LCD_D7),
+		active: true,
+		msg:    make(chan string),
+		end:    make(chan bool),
+	}
+	l.reset()
+
 	go func() {
 		for {
 			select {
@@ -81,7 +93,9 @@ func (l *Lcd) Display(msg string) {
 
 func (l *Lcd) Close() {
 	log.Printf("Lcd.Close")
-	l.end <- true
+	if l.active {
+		l.end <- true
+	}
 }
 
 func initPin(pin int) gpio.Pin {
@@ -93,25 +107,6 @@ func initPin(pin int) gpio.Pin {
 	return nil
 }
 
-func initLcd() (l *Lcd) {
-	l = &Lcd{
-		lcdRS:  initPin(LCD_RS),
-		lcdE:   initPin(LCD_E),
-		lcdD4:  initPin(LCD_D4),
-		lcdD5:  initPin(LCD_D5),
-		lcdD6:  initPin(LCD_D6),
-		lcdD7:  initPin(LCD_D7),
-		active: true,
-		msg:    make(chan string),
-		end:    make(chan bool),
-	}
-	l.Lock()
-	defer l.Unlock()
-
-	l.reset()
-	return l
-}
-
 func (l *Lcd) reset() {
 	log.Printf("Lcd.reset()")
 	l.writeByte(0x33, LCD_CMD) // 110011 Initialise
@@ -120,14 +115,12 @@ func (l *Lcd) reset() {
 	l.writeByte(0x0C, LCD_CMD) // 001100 Display On,Cursor Off, Blink Off
 	l.writeByte(0x06, LCD_CMD) // 000110 Cursor move direction
 	l.writeByte(0x01, LCD_CMD) // 000001 Clear display
-	time.Sleep(E_DELAY)
-	l.writeByte(0x01, LCD_CMD) // 000001 Clear display
-	time.Sleep(E_DELAY)
 }
 
 func (l *Lcd) close() {
 	l.Lock()
 	defer l.Unlock()
+
 	if !l.active {
 		return
 	}
@@ -238,7 +231,7 @@ func (l *Lcd) display(msg string) {
 			l.line1 = m
 			l.writeByte(LCD_LINE_1, LCD_CMD)
 		case 1:
-			if l.line2 == m {
+			if l.line2 != m {
 				continue
 			}
 			l.line2 = m
