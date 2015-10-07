@@ -6,6 +6,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var (
@@ -34,11 +35,15 @@ func (s *Status) String() string {
 type MPD struct {
 	Message chan *Status
 	watcher *mpd.Watcher
+	end     chan bool
+	active  bool
 }
 
 func NewMPD() *MPD {
 	return &MPD{
-		Message: make(chan *Status, 10),
+		Message: make(chan *Status),
+		end:     make(chan bool),
+		active:  true,
 	}
 }
 
@@ -52,8 +57,11 @@ func (m *MPD) watch() (err error) {
 
 	defer func() {
 		log.Println("mpd.watcher: closing")
-		m.watcher.Close()
-		m.watcher = nil
+		if m.watcher != nil {
+			m.watcher.Close()
+			m.watcher = nil
+		}
+		log.Println("mpd.watcher: defered")
 	}()
 
 	log.Println("mpd.watcher: starting watch")
@@ -61,7 +69,13 @@ func (m *MPD) watch() (err error) {
 	m.Message <- m.getStatus()
 
 	for {
+		if m.watcher == nil {
+			break
+		}
 		select {
+		case _ = <-m.end:
+			log.Printf("mpd.watcher - end")
+			return
 		case subsystem := <-m.watcher.Event:
 			log.Printf("mpd.watcher - event: %v", subsystem)
 			switch subsystem {
@@ -70,7 +84,7 @@ func (m *MPD) watch() (err error) {
 			}
 		case err := <-m.watcher.Error:
 			log.Printf("mpd.watcher: error event: %v", err)
-			return nil
+			break
 		}
 	}
 
@@ -78,11 +92,26 @@ func (m *MPD) watch() (err error) {
 }
 
 func (m *MPD) Connect() (err error) {
-	err = m.watch()
-	if err != nil {
-		log.Printf("mpd.Connect: start watch error: %v", err)
-	}
+
+	go func() {
+		for m.active {
+
+			err = m.watch()
+			if err != nil {
+				log.Printf("mpd.Connect: start watch error: %v", err)
+			}
+			time.Sleep(5 * time.Second)
+		}
+	}()
 	return
+}
+
+func (m *MPD) Close() {
+	log.Printf("mpd close")
+	m.active = false
+	if m.watcher != nil {
+		m.end <- true
+	}
 }
 
 func (m *MPD) getStatus() (s *Status) {

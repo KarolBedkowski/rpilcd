@@ -5,7 +5,7 @@ import (
 	"github.com/davecheney/gpio/rpi"
 	"golang.org/x/text/transform"
 	"golang.org/x/text/unicode/norm"
-	//	"log"
+	"log"
 	"strings"
 	"sync"
 	"time"
@@ -13,8 +13,8 @@ import (
 
 const (
 	// Timing constants
-	E_PULSE = 20 * time.Microsecond
-	E_DELAY = 20 * time.Microsecond
+	E_PULSE = 50 * time.Microsecond
+	E_DELAY = 50 * time.Microsecond
 
 	LCD_RS = 7
 	LCD_E  = 8
@@ -49,10 +49,39 @@ type Lcd struct {
 	lcdD6 gpio.Pin
 	lcdD7 gpio.Pin
 
-	line1 string
-	line2 string
+	line1  string
+	line2  string
+	active bool
 
 	sync.Mutex
+
+	msg chan string
+	end chan bool
+}
+
+func NewLcd() (l *Lcd) {
+	l = initLcd()
+	go func() {
+		for {
+			select {
+			case msg := <-l.msg:
+				l.display(msg)
+			case _ = <-l.end:
+				l.close()
+				break
+			}
+		}
+	}()
+	return l
+}
+
+func (l *Lcd) Display(msg string) {
+	l.msg <- msg
+}
+
+func (l *Lcd) Close() {
+	log.Printf("Lcd.Close")
+	l.end <- true
 }
 
 func initPin(pin int) gpio.Pin {
@@ -64,14 +93,17 @@ func initPin(pin int) gpio.Pin {
 	return nil
 }
 
-func InitLcd() (l *Lcd) {
+func initLcd() (l *Lcd) {
 	l = &Lcd{
-		lcdRS: initPin(LCD_RS),
-		lcdE:  initPin(LCD_E),
-		lcdD4: initPin(LCD_D4),
-		lcdD5: initPin(LCD_D5),
-		lcdD6: initPin(LCD_D6),
-		lcdD7: initPin(LCD_D7),
+		lcdRS:  initPin(LCD_RS),
+		lcdE:   initPin(LCD_E),
+		lcdD4:  initPin(LCD_D4),
+		lcdD5:  initPin(LCD_D5),
+		lcdD6:  initPin(LCD_D6),
+		lcdD7:  initPin(LCD_D7),
+		active: true,
+		msg:    make(chan string),
+		end:    make(chan bool),
 	}
 	l.Lock()
 	defer l.Unlock()
@@ -81,19 +113,27 @@ func InitLcd() (l *Lcd) {
 }
 
 func (l *Lcd) reset() {
-	l.writeByte(0x33, LCD_CMD)
-	l.writeByte(0x32, LCD_CMD)
-	l.writeByte(0x28, LCD_CMD)
-	l.writeByte(0x0C, LCD_CMD)
-	l.writeByte(0x06, LCD_CMD)
-	l.writeByte(0x01, LCD_CMD)
+	log.Printf("Lcd.reset()")
+	l.writeByte(0x33, LCD_CMD) // 110011 Initialise
+	l.writeByte(0x32, LCD_CMD) // 110010 Initialise
+	l.writeByte(0x28, LCD_CMD) // 101000 Data length, number of lines, font size
+	l.writeByte(0x0C, LCD_CMD) // 001100 Display On,Cursor Off, Blink Off
+	l.writeByte(0x06, LCD_CMD) // 000110 Cursor move direction
+	l.writeByte(0x01, LCD_CMD) // 000001 Clear display
+	time.Sleep(E_DELAY)
+	l.writeByte(0x01, LCD_CMD) // 000001 Clear display
+	time.Sleep(E_DELAY)
 }
 
-func (l *Lcd) Close() {
+func (l *Lcd) close() {
 	l.Lock()
 	defer l.Unlock()
+	if !l.active {
+		return
+	}
 
 	l.reset()
+
 	l.lcdRS.Clear()
 	l.lcdRS.Close()
 	l.lcdE.Clear()
@@ -106,6 +146,8 @@ func (l *Lcd) Close() {
 	l.lcdD6.Close()
 	l.lcdD7.Clear()
 	l.lcdD7.Close()
+
+	l.active = false
 }
 
 // writeByte send byte to lcd
@@ -174,9 +216,13 @@ func (l *Lcd) writeByte(bits uint8, characterMode bool) {
 	time.Sleep(E_DELAY)
 }
 
-func (l *Lcd) Display(msg string) {
+func (l *Lcd) display(msg string) {
 	l.Lock()
 	defer l.Unlock()
+
+	if !l.active {
+		return
+	}
 
 	for line, m := range strings.Split(msg, "\n") {
 		//m = removeNlChars(m)
