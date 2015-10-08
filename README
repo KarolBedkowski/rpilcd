@@ -18,7 +18,7 @@ Requirements:
  * Libraries (go get):
 
    * gompd (http://github.com/turbowookie/gompd/mpd)
-   * gpio (http://github.com/davecheney/gpio)
+   * go-rpio (https://github.com/stianeikeland/go-rpio)
 
 Building:
  * go get .

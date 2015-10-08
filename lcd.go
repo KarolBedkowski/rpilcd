@@ -1,8 +1,7 @@
 package main
 
 import (
-	"github.com/davecheney/gpio"
-	"github.com/davecheney/gpio/rpi"
+	"github.com/stianeikeland/go-rpio"
 	"golang.org/x/text/transform"
 	"golang.org/x/text/unicode/norm"
 	"log"
@@ -13,8 +12,8 @@ import (
 
 const (
 	// Timing constants
-	ePulse = 50 * time.Microsecond
-	eDelay = 50 * time.Microsecond
+	ePulse = 30 * time.Microsecond
+	eDelay = 30 * time.Microsecond
 
 	lcdRS = 7
 	lcdE  = 8
@@ -45,12 +44,12 @@ func removeNlChars(str string) string {
 type Lcd struct {
 	sync.Mutex
 
-	lcdRS gpio.Pin
-	lcdE  gpio.Pin
-	lcdD4 gpio.Pin
-	lcdD5 gpio.Pin
-	lcdD6 gpio.Pin
-	lcdD7 gpio.Pin
+	lcdRS rpio.Pin
+	lcdE  rpio.Pin
+	lcdD4 rpio.Pin
+	lcdD5 rpio.Pin
+	lcdD6 rpio.Pin
+	lcdD7 rpio.Pin
 
 	line1  string
 	line2  string
@@ -62,6 +61,12 @@ type Lcd struct {
 
 // NewLcd create and init new lcd output
 func NewLcd() (l *Lcd) {
+
+	if err := rpio.Open(); err != nil {
+		panic(err)
+
+	}
+
 	l = &Lcd{
 		lcdRS:  initPin(lcdRS),
 		lcdE:   initPin(lcdE),
@@ -82,7 +87,7 @@ func NewLcd() (l *Lcd) {
 				l.display(msg)
 			case _ = <-l.end:
 				l.close()
-				break
+				return
 			}
 		}
 	}()
@@ -102,12 +107,9 @@ func (l *Lcd) Close() {
 	}
 }
 
-func initPin(pin int) (p gpio.Pin) {
-	var err error
-	p, err = rpi.OpenPin(pin, gpio.ModeOutput)
-	if err != nil {
-		panic(err)
-	}
+func initPin(pin int) (p rpio.Pin) {
+	p = rpio.Pin(pin)
+	rpio.PinMode(p, rpio.Output)
 	return
 }
 
@@ -125,24 +127,31 @@ func (l *Lcd) close() {
 	l.Lock()
 	defer l.Unlock()
 
+	log.Printf("Lcd.close() active: %v", l.active)
+
 	if !l.active {
 		return
 	}
 
-	l.reset()
+	l.writeByte(lcdLine1, lcdCmd)
+	for i := 0; i < lcdWidth; i++ {
+		l.writeByte(' ', lcdChr)
+	}
+	l.writeByte(lcdLine2, lcdCmd)
+	for i := 0; i < lcdWidth; i++ {
+		l.writeByte(' ', lcdChr)
+	}
+	time.Sleep(1 * time.Second)
 
-	l.lcdRS.Clear()
-	l.lcdRS.Close()
-	l.lcdE.Clear()
-	l.lcdE.Close()
-	l.lcdD4.Clear()
-	l.lcdD4.Close()
-	l.lcdD5.Clear()
-	l.lcdD5.Close()
-	l.lcdD6.Clear()
-	l.lcdD6.Close()
-	l.lcdD7.Clear()
-	l.lcdD7.Close()
+	l.writeByte(0x01, lcdCmd) // 000001 Clear display
+
+	l.lcdRS.Low()
+	l.lcdE.Low()
+	l.lcdD4.Low()
+	l.lcdD5.Low()
+	l.lcdD6.Low()
+	l.lcdD7.Low()
+	rpio.Close()
 
 	l.active = false
 	close(l.msg)
@@ -152,66 +161,66 @@ func (l *Lcd) close() {
 // writeByte send byte to lcd
 func (l *Lcd) writeByte(bits uint8, characterMode bool) {
 	if characterMode {
-		l.lcdRS.Set()
+		l.lcdRS.High()
 	} else {
-		l.lcdRS.Clear()
+		l.lcdRS.Low()
 	}
 
 	// High bits
 	if bits&0x10 == 0x10 {
-		l.lcdD4.Set()
+		l.lcdD4.High()
 	} else {
-		l.lcdD4.Clear()
+		l.lcdD4.Low()
 	}
 	if bits&0x20 == 0x20 {
-		l.lcdD5.Set()
+		l.lcdD5.High()
 	} else {
-		l.lcdD5.Clear()
+		l.lcdD5.Low()
 	}
 	if bits&0x40 == 0x40 {
-		l.lcdD6.Set()
+		l.lcdD6.High()
 	} else {
-		l.lcdD6.Clear()
+		l.lcdD6.Low()
 	}
 	if bits&0x80 == 0x80 {
-		l.lcdD7.Set()
+		l.lcdD7.High()
 	} else {
-		l.lcdD7.Clear()
+		l.lcdD7.Low()
 	}
 
 	// Toggle 'Enable' pin
 	time.Sleep(eDelay)
-	l.lcdE.Set()
+	l.lcdE.High()
 	time.Sleep(ePulse)
-	l.lcdE.Clear()
+	l.lcdE.Low()
 	time.Sleep(eDelay)
 
 	// Low bits
 	if bits&0x01 == 0x01 {
-		l.lcdD4.Set()
+		l.lcdD4.High()
 	} else {
-		l.lcdD4.Clear()
+		l.lcdD4.Low()
 	}
 	if bits&0x02 == 0x02 {
-		l.lcdD5.Set()
+		l.lcdD5.High()
 	} else {
-		l.lcdD5.Clear()
+		l.lcdD5.Low()
 	}
 	if bits&0x04 == 0x04 {
-		l.lcdD6.Set()
+		l.lcdD6.High()
 	} else {
-		l.lcdD6.Clear()
+		l.lcdD6.Low()
 	}
 	if bits&0x08 == 0x08 {
-		l.lcdD7.Set()
+		l.lcdD7.High()
 	} else {
-		l.lcdD7.Clear()
+		l.lcdD7.Low()
 	}
 	// Toggle 'Enable' pin
 	time.Sleep(eDelay)
-	l.lcdE.Set()
+	l.lcdE.High()
 	time.Sleep(ePulse)
-	l.lcdE.Clear()
+	l.lcdE.Low()
 	time.Sleep(eDelay)
 }
 
@@ -222,6 +231,8 @@ func (l *Lcd) display(msg string) {
 	if !l.active {
 		return
 	}
+
+	//	log.Printf("Lcd.display(%v)", msg)
 
 	for line, m := range strings.Split(msg, "\n") {
 		//m = removeNlChars(m)
