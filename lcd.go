@@ -12,8 +12,8 @@ import (
 
 const (
 	// Timing constants
-	ePulse = 20 * time.Microsecond
-	eDelay = 20 * time.Microsecond
+	ePulse = 30 * time.Microsecond
+	eDelay = 30 * time.Microsecond
 
 	lcdRS = 7
 	lcdE  = 8
@@ -87,7 +87,7 @@ func NewLcd() (l *Lcd) {
 				l.display(msg)
 			case _ = <-l.end:
 				l.close()
-				break
+				return
 			}
 		}
 	}()
@@ -127,11 +127,23 @@ func (l *Lcd) close() {
 	l.Lock()
 	defer l.Unlock()
 
+	log.Printf("Lcd.close() active: %v", l.active)
+
 	if !l.active {
 		return
 	}
 
-	l.reset()
+	l.writeByte(lcdLine1, lcdCmd)
+	for i := 0; i < lcdWidth; i++ {
+		l.writeByte(' ', lcdChr)
+	}
+	l.writeByte(lcdLine2, lcdCmd)
+	for i := 0; i < lcdWidth; i++ {
+		l.writeByte(' ', lcdChr)
+	}
+	time.Sleep(1 * time.Second)
+
+	l.writeByte(0x01, lcdCmd) // 000001 Clear display
 
 	l.lcdRS.Low()
 	l.lcdE.Low()
@@ -219,6 +231,8 @@ func (l *Lcd) display(msg string) {
 	if !l.active {
 		return
 	}
+
+	//	log.Printf("Lcd.display(%v)", msg)
 
 	for line, m := range strings.Split(msg, "\n") {
 		//m = removeNlChars(m)
