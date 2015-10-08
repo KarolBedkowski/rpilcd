@@ -65,6 +65,8 @@ func (l *Console) close() {
 	}
 
 	l.active = false
+	close(l.msg)
+	close(l.end)
 }
 
 func (l *Console) display(text string) {

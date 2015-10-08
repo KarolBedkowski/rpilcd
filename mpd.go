@@ -62,6 +62,7 @@ func (m *MPD) watch() (err error) {
 		if m.watcher != nil {
 			m.watcher.Close()
 			m.watcher = nil
+			close(m.end)
 		}
 	}()
 

@@ -145,6 +145,8 @@ func (l *Lcd) close() {
 	l.lcdD7.Close()
 
 	l.active = false
+	close(l.msg)
+	close(l.end)
 }
 
 // writeByte send byte to lcd
