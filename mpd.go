@@ -57,15 +57,6 @@ func (m *MPD) watch() (err error) {
 	}
 	log.Printf("mpd.watch: connected to %v", *mpdHost)
 
-	defer func() {
-		log.Println("mpd.watch: closing")
-		if m.watcher != nil {
-			m.watcher.Close()
-			m.watcher = nil
-			close(m.end)
-		}
-	}()
-
 	log.Println("mpd.watch: starting watch")
 
 	m.Message <- m.getStatus()
@@ -86,7 +77,7 @@ func (m *MPD) watch() (err error) {
 			}
 		case err := <-m.watcher.Error:
 			log.Printf("mpd.watch: error event: %v", err)
-			break
+			return err
 		}
 	}
 
@@ -97,6 +88,15 @@ func (m *MPD) watch() (err error) {
 func (m *MPD) Connect() (err error) {
 
 	go func() {
+		defer func() {
+			log.Println("mpd.watch: closing")
+			if m.watcher != nil {
+				m.watcher.Close()
+				m.watcher = nil
+				close(m.end)
+			}
+		}()
+
 		for m.active {
 			if err = m.watch(); err != nil {
 				log.Printf("mpd.Connect: start watch error: %v", err)
