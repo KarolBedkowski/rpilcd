@@ -74,6 +74,8 @@ func (m *MPD) watch() (err error) {
 			switch subsystem {
 			case "player":
 				m.Message <- m.getStatus()
+			default:
+				m.Message <- m.getStatus()
 			}
 		case err := <-m.watcher.Error:
 			log.Printf("mpd.watch: error event: %v", err)
