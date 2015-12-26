@@ -23,7 +23,9 @@ clean:
 	find . -iname '*.orig' -delete
 
 install_pi: build_pi
+	ssh pi sudo service k_rpilcd stop
 	scp rpilcd pi:
+	ssh pi sudo service k_rpilcd start
 
 deps:
 	go get -d -v ./...
