@@ -5,7 +5,7 @@ import (
 	"flag"
 	"io/ioutil"
 	"log"
-	//"net/http"
+	"net"
 	//_ "net/http/pprof"
 	"os"
 	"os/signal"
@@ -32,8 +32,18 @@ func main() {
 
 	soutput := flag.Bool("console", false, "Print on console instead of lcd")
 	refreshInt := flag.Int64("interval", 1000, "Interval between lcd updates in ms")
+	startWS := flag.Bool("start_ws", true, "Start WS for external content")
+	wsAddr := flag.String("ws_addr", "localhost:8681", "Webservice address")
 
 	flag.Parse()
+
+	ws := WSServer{
+		Addr: *wsAddr,
+	}
+
+	if *startWS {
+		ws.Start()
+	}
 
 	log.Printf("main: interval: %d ms", *refreshInt)
 
@@ -68,6 +78,7 @@ func main() {
 	log.Printf("main: entering loop")
 
 	ts := NewTextScroller(lcdWidth)
+	ts.PrioMsgTime = 5000 / int(*refreshInt)
 	ticker := time.NewTicker(time.Duration(*refreshInt) * time.Millisecond)
 
 	sig := make(chan os.Signal, 1)
@@ -75,13 +86,15 @@ func main() {
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 	for {
 		select {
+		case _ = <-sig:
+			return
+		case msg := <-ws.Message:
+			ts.AddPrioLines(msg)
 		case msg := <-mpd.Message:
 			ts.Set(formatData(msg))
 		case <-ticker.C:
 			text := ts.Tick()
 			disp.Display(text)
-		case _ = <-sig:
-			return
 		}
 	}
 }
@@ -108,4 +121,38 @@ func loadAvg() string {
 		log.Printf("main.loadavg error: %v", err)
 	}
 	return ""
+}
+
+type WSServer struct {
+	Addr    string
+	Message chan string
+}
+
+func (s *WSServer) Start() {
+	if s.Addr == "" {
+		s.Addr = ":8681"
+	}
+
+	s.Message = make(chan string)
+
+	go func() {
+		ln, err := net.Listen("tcp", s.Addr)
+		if err != nil {
+			log.Printf("WSServer.Start Listen error: %s", err.Error())
+			return
+		}
+		defer ln.Close()
+		for {
+			conn, err := ln.Accept()
+			if err != nil {
+				log.Printf("WSServer.Start Error accepting: %s", err.Error())
+				return
+			}
+			buf := make([]byte, 1024)
+			if reqLen, err := conn.Read(buf); err == nil || reqLen > 0 {
+				s.Message <- string(buf)
+			}
+			conn.Close()
+		}
+	}()
 }
