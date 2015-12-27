@@ -36,7 +36,7 @@ func NewConsole() (l *Console) {
 
 			case _ = <-l.end:
 				l.close()
-				break
+				return
 			}
 		}
 	}()
