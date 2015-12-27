@@ -1,5 +1,7 @@
 package main
 
+// Hitachi HD44780U support library
+
 import (
 	"github.com/stianeikeland/go-rpio"
 	"golang.org/x/text/transform"
@@ -12,8 +14,8 @@ import (
 
 const (
 	// Timing constants
-	ePulse = 30 * time.Microsecond
-	eDelay = 30 * time.Microsecond
+	ePulse = 1 * time.Microsecond
+	eDelay = 3 * time.Microsecond
 
 	lcdRS = 7
 	lcdE  = 8
@@ -189,7 +191,7 @@ func (l *Lcd) writeByte(bits uint8, characterMode bool) {
 	}
 
 	// Toggle 'Enable' pin
-	time.Sleep(eDelay)
+	//time.Sleep(eDelay)
 	l.lcdE.High()
 	time.Sleep(ePulse)
 	l.lcdE.Low()
@@ -217,7 +219,7 @@ func (l *Lcd) writeByte(bits uint8, characterMode bool) {
 		l.lcdD7.Low()
 	}
 	// Toggle 'Enable' pin
-	time.Sleep(eDelay)
+	//time.Sleep(eDelay)
 	l.lcdE.High()
 	time.Sleep(ePulse)
 	l.lcdE.Low()
@@ -232,7 +234,7 @@ func (l *Lcd) display(msg string) {
 		return
 	}
 
-	//	log.Printf("Lcd.display(%v)", msg)
+	log.Printf("Lcd.display('%#v')", msg)
 
 	for line, m := range strings.Split(msg, "\n") {
 		//m = removeNlChars(m)
@@ -254,12 +256,13 @@ func (l *Lcd) display(msg string) {
 			l.line2 = m
 			l.writeByte(lcdLine2, lcdCmd)
 		default:
+			log.Printf("Lcd.display: to many lines %d: '%v'", line, m)
 			return
 		}
 
 		//log.Printf("Lcd.LcdString Line: %d, msg=%v\n", line, m)
 		for i := 0; i < lcdWidth; i++ {
-			l.writeByte(m[i], lcdChr)
+			l.writeByte(byte(m[i]), lcdChr)
 		}
 	}
 }
