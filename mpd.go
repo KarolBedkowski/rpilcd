@@ -24,13 +24,8 @@ type Status struct {
 }
 
 func (s *Status) String() string {
-	if s.Playing {
-		if s.Status == "play" {
-			return s.Flags + s.Volume + "\n" + s.CurrentSong
-		}
-		return s.Status + " " + s.Volume + "\n" + s.CurrentSong
-	}
-	return s.Status
+	return fmt.Sprintf("Status[Playing=%v Status=%v Flags=%v Volume=%v CurrentSong='%v']",
+		s.Playing, s.Status, s.Flags, s.Volume, s.CurrentSong)
 }
 
 // MPD client
