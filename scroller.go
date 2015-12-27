@@ -39,11 +39,8 @@ func (tsl *textScrollerLine) scroll() string {
 
 // TextScroller format some text to display in few character display
 type TextScroller struct {
-	Width         int
-	lines         []*textScrollerLine
-	prioLines     []string
-	prioLinesTick int
-	PrioMsgTime   int
+	Width int
+	lines []*textScrollerLine
 
 	mu sync.Mutex
 }
@@ -51,8 +48,7 @@ type TextScroller struct {
 // NewTextScroller create new TextScroller struct
 func NewTextScroller(width int) *TextScroller {
 	res := &TextScroller{
-		Width:     width,
-		prioLines: make([]string, 0),
+		Width: width,
 	}
 	for i := 0; i < 2; i++ {
 		l := &textScrollerLine{}
@@ -72,53 +68,14 @@ func (t *TextScroller) Set(text string) {
 	}
 }
 
-func (t *TextScroller) AddPrioLines(text string) {
-	log.Printf("TextScroller.AddPrioLines: %v", text)
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	if len(t.prioLines) == 0 {
-		t.prioLinesTick = 0
-	}
-
-	for _, line := range strings.Split(strings.TrimRight(text, "\n "), "\n") {
-		line = strings.TrimRight(line, "\n ")
-		line += strings.Repeat(" ", t.Width)
-		t.prioLines = append(t.prioLines, line[:t.Width])
-		log.Printf("TextScroller.AddPrioLines:  + %v", line)
-	}
-
-	if len(t.prioLines)%2 == 1 {
-		t.prioLines = append(t.prioLines, strings.Repeat(" ", t.Width))
-	}
-}
-
 // Tick reformat (scroll) long messages and return formated text
 func (t *TextScroller) Tick() (res string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	if len(t.prioLines) == 0 {
-		return t.stdTick()
-	}
 
-	t.prioLinesTick++
-	if t.prioLinesTick > t.PrioMsgTime {
-		t.prioLines = t.prioLines[2:]
-		t.prioLinesTick = 0
-	}
-
-	if len(t.prioLines) == 0 {
-		return t.stdTick()
-	}
-
-	res = t.prioLines[0] + "\n" + t.prioLines[1]
-	log.Printf("TextScroller.Tick prio '%v'", res)
-	return
-}
-
-func (t *TextScroller) stdTick() (res string) {
 	for _, l := range t.lines {
 		res += l.scroll()[:t.Width] + "\n"
 	}
-	return strings.TrimRight(res, "\n")
 
+	return strings.TrimRight(res, "\n")
 }

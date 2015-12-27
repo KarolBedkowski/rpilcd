@@ -78,7 +78,8 @@ func main() {
 	log.Printf("main: entering loop")
 
 	ts := NewTextScroller(lcdWidth)
-	ts.PrioMsgTime = 5000 / int(*refreshInt)
+	pt := NewPrioText(lcdWidth)
+	pt.PrioMsgTime = 5000 / int(*refreshInt)
 	ticker := time.NewTicker(time.Duration(*refreshInt) * time.Millisecond)
 
 	sig := make(chan os.Signal, 1)
@@ -89,18 +90,27 @@ func main() {
 		case _ = <-sig:
 			return
 		case msg := <-ws.Message:
-			ts.AddPrioLines(msg)
+			pt.Add(msg)
 		case msg := <-mpd.Message:
-			ts.Set(formatData(msg))
+			lastMpdMessage = msg
+			ts.Set(formatData(lastMpdMessage))
 		case <-ticker.C:
-			text := ts.Tick()
+			text, ok := pt.Get()
+			if !ok {
+				if lastMpdMessage == nil || !lastMpdMessage.Playing {
+					log.Printf("lastMpdMessage = %s", lastMpdMessage.String())
+					n := time.Now()
+					ts.Set(loadAvg() + " | stop\n " + n.Format("01-02 15:04:05"))
+				}
+				text = ts.Tick()
+			}
 			disp.Display(text)
 		}
 	}
 }
 
 func formatData(s *Status) string {
-	if s.Playing {
+	if s != nil && s.Playing {
 		if s.Status == "play" {
 			return loadAvg() + " | " + s.Flags + s.Volume + "\n" + removeNlChars(s.CurrentSong)
 		}
@@ -108,7 +118,7 @@ func formatData(s *Status) string {
 	}
 
 	n := time.Now()
-	return loadAvg() + " | " + s.Status + "\n " + n.Format("01-02 15:04:05")
+	return loadAvg() + " | stop\n " + n.Format("01-02 15:04:05")
 }
 
 func loadAvg() string {
@@ -150,7 +160,7 @@ func (s *WSServer) Start() {
 			}
 			buf := make([]byte, 1024)
 			if reqLen, err := conn.Read(buf); err == nil || reqLen > 0 {
-				s.Message <- string(buf)
+				s.Message <- string(buf[:reqLen])
 			}
 			conn.Close()
 		}
