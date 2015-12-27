@@ -85,6 +85,7 @@ func main() {
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt, os.Kill)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
+	lastMpdMessage := mpd.GetStatus()
 	for {
 		select {
 		case _ = <-sig:

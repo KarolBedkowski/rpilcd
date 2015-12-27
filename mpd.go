@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"github.com/turbowookie/gompd/mpd"
 	"log"
 	"strconv"
@@ -59,7 +60,7 @@ func (m *MPD) watch() (err error) {
 
 	log.Println("mpd.watch: starting watch")
 
-	m.Message <- m.getStatus()
+	m.Message <- m.GetStatus()
 
 	for {
 		if m.watcher == nil {
@@ -73,9 +74,9 @@ func (m *MPD) watch() (err error) {
 			log.Printf("mpd.watch: event: %v", subsystem)
 			switch subsystem {
 			case "player":
-				m.Message <- m.getStatus()
+				m.Message <- m.GetStatus()
 			default:
-				m.Message <- m.getStatus()
+				m.Message <- m.GetStatus()
 			}
 		case err := <-m.watcher.Error:
 			log.Printf("mpd.watch: error event: %v", err)
@@ -118,7 +119,7 @@ func (m *MPD) Close() {
 	}
 }
 
-func (m *MPD) getStatus() (s *Status) {
+func (m *MPD) GetStatus() (s *Status) {
 	s = &Status{
 		Playing:     false,
 		Flags:       "ERR",
@@ -127,16 +128,16 @@ func (m *MPD) getStatus() (s *Status) {
 
 	con, err := mpd.Dial("tcp", *mpdHost)
 	if err != nil {
-		log.Printf("mpd.getStatus: connect do %s error: %v", *mpdHost, err.Error())
+		log.Printf("mpd.GetStatus: connect do %s error: %v", *mpdHost, err.Error())
 		return
 	}
-	log.Printf("mpd.getStatus: connected to %s", *mpdHost)
+	log.Printf("mpd.GetStatus: connected to %s", *mpdHost)
 
 	defer con.Close()
 
 	status, err := con.Status()
 	if err != nil {
-		log.Printf("mpd.getStatus: Status error: %v", err.Error())
+		log.Printf("mpd.GetStatus: Status error: %v", err.Error())
 		return
 	}
 
@@ -154,7 +155,7 @@ func (m *MPD) getStatus() (s *Status) {
 
 	song, err := con.CurrentSong()
 	if err != nil {
-		log.Printf("mpd.getStatus: CurrentSong error: %v", err.Error())
+		log.Printf("mpd.GetStatus: CurrentSong error: %v", err.Error())
 		return
 	}
 
