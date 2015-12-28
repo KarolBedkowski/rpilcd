@@ -15,7 +15,7 @@ import (
 const (
 	// Timing constants
 	ePulse = 1 * time.Microsecond
-	eDelay = 3 * time.Microsecond
+	eDelay = 70 * time.Microsecond
 
 	lcdRS = 7
 	lcdE  = 8
@@ -117,12 +117,25 @@ func initPin(pin int) (p rpio.Pin) {
 
 func (l *Lcd) reset() {
 	log.Printf("Lcd.reset()")
-	l.writeByte(0x33, lcdCmd) // 110011 Initialise
-	l.writeByte(0x32, lcdCmd) // 110010 Initialise
+	//l.writeByte(0x33, lcdCmd) // 110011 Initialise
+	l.write4Bits(0x3, lcdCmd) // 110011 Initialise
+	time.Sleep(5 * time.Millisecond)
+	//l.writeByte(0x32, lcdCmd) // 110010 Initialise
+	l.write4Bits(0x3, lcdCmd) // 110010 Initialise
+	time.Sleep(120 * time.Microsecond)
+	//l.writeByte(0x30, lcdCmd) // 110000 Initialise
+	l.write4Bits(0x3, lcdCmd) // 110010 Initialise
+	time.Sleep(120 * time.Microsecond)
+
+	l.write4Bits(0x2, lcdCmd) // 110010 Initialise
+	time.Sleep(120 * time.Microsecond)
+
 	l.writeByte(0x28, lcdCmd) // 101000 Data length, number of lines, font size
 	l.writeByte(0x0C, lcdCmd) // 001100 Display On,Cursor Off, Blink Off
 	l.writeByte(0x06, lcdCmd) // 000110 Cursor move direction
 	l.writeByte(0x01, lcdCmd) // 000001 Clear display
+	time.Sleep(5 * time.Millisecond)
+	log.Printf("Lcd.reset() finished")
 }
 
 func (l *Lcd) close() {
@@ -146,6 +159,7 @@ func (l *Lcd) close() {
 	time.Sleep(1 * time.Second)
 
 	l.writeByte(0x01, lcdCmd) // 000001 Clear display
+	l.writeByte(0x0C, lcdCmd) // 001000 Display Off
 
 	l.lcdRS.Low()
 	l.lcdE.Low()
@@ -192,10 +206,12 @@ func (l *Lcd) writeByte(bits uint8, characterMode bool) {
 
 	// Toggle 'Enable' pin
 	//time.Sleep(eDelay)
+	time.Sleep(ePulse)
 	l.lcdE.High()
 	time.Sleep(ePulse)
 	l.lcdE.Low()
-	time.Sleep(eDelay)
+	time.Sleep(ePulse)
+	//time.Sleep(eDelay)
 
 	// Low bits
 	if bits&0x01 == 0x01 {
@@ -220,9 +236,50 @@ func (l *Lcd) writeByte(bits uint8, characterMode bool) {
 	}
 	// Toggle 'Enable' pin
 	//time.Sleep(eDelay)
+	time.Sleep(ePulse)
 	l.lcdE.High()
 	time.Sleep(ePulse)
 	l.lcdE.Low()
+
+	time.Sleep(eDelay)
+}
+
+// write4Bits send 4bits to lcd
+func (l *Lcd) write4Bits(bits uint8, characterMode bool) {
+	if characterMode {
+		l.lcdRS.High()
+	} else {
+		l.lcdRS.Low()
+	}
+
+	// Low bits
+	if bits&0x01 == 0x01 {
+		l.lcdD4.High()
+	} else {
+		l.lcdD4.Low()
+	}
+	if bits&0x02 == 0x02 {
+		l.lcdD5.High()
+	} else {
+		l.lcdD5.Low()
+	}
+	if bits&0x04 == 0x04 {
+		l.lcdD6.High()
+	} else {
+		l.lcdD6.Low()
+	}
+	if bits&0x08 == 0x08 {
+		l.lcdD7.High()
+	} else {
+		l.lcdD7.Low()
+	}
+	// Toggle 'Enable' pin
+	//time.Sleep(eDelay)
+	time.Sleep(ePulse)
+	l.lcdE.High()
+	time.Sleep(ePulse)
+	l.lcdE.Low()
+
 	time.Sleep(eDelay)
 }
 
