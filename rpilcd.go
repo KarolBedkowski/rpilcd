@@ -13,6 +13,8 @@ import (
 	"time"
 )
 
+const lcdWidth = 16
+
 // AppVersion global var
 var AppVersion = "dev"
 

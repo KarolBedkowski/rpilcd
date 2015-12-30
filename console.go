@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	consoleDelay = (eDelay*4 + ePulse*2) * lcdWidth
+	consoleDelay = (80 * time.Millisecond) * 16 * 2
 )
 
 // Console simulate lcd without physical lcd
