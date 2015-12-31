@@ -5,7 +5,6 @@ import (
 	"flag"
 	"io/ioutil"
 	"log"
-	"net"
 	//_ "net/http/pprof"
 	"os"
 	"os/signal"
@@ -39,10 +38,9 @@ func main() {
 
 	flag.Parse()
 
-	ws := WSServer{
+```	ws := WSServer{
 		Addr: *wsAddr,
 	}
-
 	if *startWS {
 		ws.Start()
 	}
@@ -134,38 +132,4 @@ func loadAvg() string {
 		log.Printf("main.loadavg error: %v", err)
 	}
 	return ""
-}
-
-type WSServer struct {
-	Addr    string
-	Message chan string
-}
-
-func (s *WSServer) Start() {
-	if s.Addr == "" {
-		s.Addr = ":8681"
-	}
-
-	s.Message = make(chan string)
-
-	go func() {
-		ln, err := net.Listen("tcp", s.Addr)
-		if err != nil {
-			log.Printf("WSServer.Start Listen error: %s", err.Error())
-			return
-		}
-		defer ln.Close()
-		for {
-			conn, err := ln.Accept()
-			if err != nil {
-				log.Printf("WSServer.Start Error accepting: %s", err.Error())
-				return
-			}
-			buf := make([]byte, 1024)
-			if reqLen, err := conn.Read(buf); err == nil || reqLen > 0 {
-				s.Message <- string(buf[:reqLen])
-			}
-			conn.Close()
-		}
-	}()
 }
