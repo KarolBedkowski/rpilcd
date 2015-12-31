@@ -78,8 +78,8 @@ func main() {
 	log.Printf("main: entering loop")
 
 	ts := NewTextScroller(lcdWidth)
-	pt := NewPrioText(lcdWidth)
-	pt.PrioMsgTime = 5000 / int(*refreshInt)
+	um := NewUrgentMsgManager(lcdWidth)
+	um.DefaultTimeout = 5000 / int(*refreshInt)
 	ticker := time.NewTicker(time.Duration(*refreshInt) * time.Millisecond)
 
 	sig := make(chan os.Signal, 1)
@@ -91,12 +91,12 @@ func main() {
 		case _ = <-sig:
 			return
 		case msg := <-ws.Message:
-			pt.Add(msg)
+			um.AddJSON(msg)
 		case msg := <-mpd.Message:
 			lastMpdMessage = msg
 			ts.Set(formatData(lastMpdMessage))
 		case <-ticker.C:
-			text, ok := pt.Get()
+			text, ok := um.Get()
 			if !ok {
 				if lastMpdMessage == nil || !lastMpdMessage.Playing {
 					log.Printf("lastMpdMessage = %s", lastMpdMessage.String())
