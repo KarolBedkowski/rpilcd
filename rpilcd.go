@@ -33,15 +33,15 @@ func main() {
 
 	soutput := flag.Bool("console", false, "Print on console instead of lcd")
 	refreshInt := flag.Int64("interval", 1000, "Interval between lcd updates in ms")
-	startWS := flag.Bool("start_ws", true, "Start WS for external content")
-	wsAddr := flag.String("ws_addr", "localhost:8681", "Webservice address")
+	satartService := flag.Bool("startService", true, "Start TCP server for urgent messages")
+	serviceAddr := flag.String("serviceAddr", "localhost:8681", "TCP server address")
 
 	flag.Parse()
 
-```	ws := WSServer{
-		Addr: *wsAddr,
+	ws := UMServer{
+		Addr: *serviceAddr,
 	}
-	if *startWS {
+	if *satartService {
 		ws.Start()
 	}
 
