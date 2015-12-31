@@ -25,8 +25,8 @@ type Console struct {
 func NewConsole() (l *Console) {
 	l = &Console{
 		active: true,
-		msg:    make(chan string),
-		end:    make(chan bool),
+		msg:    make(chan string, 10),
+		end:    make(chan bool, 1),
 	}
 	go func() {
 		for {

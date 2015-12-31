@@ -29,8 +29,8 @@ type Lcd struct {
 // NewLcd create and init new lcd output
 func NewLcd() (l *Lcd) {
 	l = &Lcd{
-		msg: make(chan string),
-		end: make(chan bool),
+		msg: make(chan string, 10),
+		end: make(chan bool, 1),
 		lcd: hd44780.NewGPIO4bit(),
 	}
 

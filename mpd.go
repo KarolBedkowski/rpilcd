@@ -39,8 +39,8 @@ type MPD struct {
 // NewMPD create new MPD client
 func NewMPD() *MPD {
 	return &MPD{
-		Message: make(chan *Status),
-		end:     make(chan bool),
+		Message: make(chan *Status, 10),
+		end:     make(chan bool, 1),
 		active:  true,
 	}
 }
