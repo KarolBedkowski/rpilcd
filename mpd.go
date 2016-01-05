@@ -21,6 +21,7 @@ type Status struct {
 	Status      string
 	Flags       string
 	Volume      string
+	Error       string
 }
 
 func (s *Status) String() string {
@@ -114,6 +115,7 @@ func (m *MPD) Close() {
 	}
 }
 
+// GetStatus connect to mpd and get current status
 func (m *MPD) GetStatus() (s *Status) {
 	s = &Status{
 		Playing:     false,
@@ -137,6 +139,7 @@ func (m *MPD) GetStatus() (s *Status) {
 	}
 
 	s.Status = status["state"]
+	s.Error = status["error"]
 	s.Playing = s.Status != "stop"
 	s.Volume = status["volume"]
 	s.Flags = ""

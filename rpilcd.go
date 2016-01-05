@@ -111,11 +111,16 @@ func main() {
 }
 
 func formatData(s *Status) string {
-	if s != nil && s.Playing {
-		if s.Status == "play" {
-			return loadAvg() + " | " + s.Flags + s.Volume + "\n" + removeNlChars(s.CurrentSong)
+	if s != nil {
+		if s.Error != "" {
+			return loadAvg() + " | " + s.Status + " " + s.Volume + "\nErr:" + removeNlChars(s.Error)
 		}
-		return loadAvg() + " | " + s.Status + " " + s.Volume + "\n" + removeNlChars(s.CurrentSong)
+		if s.Playing {
+			if s.Status == "play" {
+				return loadAvg() + " | play " + s.Flags + " " + s.Volume + "\n" + removeNlChars(s.CurrentSong)
+			}
+			return loadAvg() + " | " + s.Status + " " + s.Volume + "\n" + removeNlChars(s.CurrentSong)
+		}
 	}
 
 	n := time.Now()
