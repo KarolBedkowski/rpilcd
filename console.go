@@ -77,3 +77,7 @@ func (l *Console) display(text string) {
 		time.Sleep(consoleDelay)
 	}
 }
+
+func (l *Console) ToggleBacklight() {
+	log.Printf("SimpleDisplay: toggle backlight")
+}

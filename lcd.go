@@ -70,3 +70,7 @@ func (l *Lcd) Close() {
 	log.Printf("Lcd.Close")
 	l.end <- true
 }
+
+func (l *Lcd) ToggleBacklight() {
+	l.lcd.ToggleBacklight()
+}

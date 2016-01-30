@@ -8,6 +8,7 @@ import (
 	//_ "net/http/pprof"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -21,6 +22,7 @@ var AppVersion = "dev"
 type Display interface {
 	Display(string)
 	Close()
+	ToggleBacklight()
 }
 
 func main() {
@@ -91,7 +93,11 @@ func main() {
 		case _ = <-sig:
 			return
 		case msg := <-ws.Message:
-			um.AddJSON(msg)
+			if strings.HasPrefix(msg, "toggle-backlight") {
+				disp.ToggleBacklight()
+			} else {
+				um.AddJSON(msg)
+			}
 		case msg := <-mpd.Message:
 			lastMpdMessage = msg
 			ts.Set(formatData(lastMpdMessage))
