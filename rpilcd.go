@@ -6,11 +6,14 @@ import (
 	"io/ioutil"
 	"log"
 	//_ "net/http/pprof"
+	"net/http"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 const lcdWidth = 16
@@ -37,6 +40,7 @@ func main() {
 	refreshInt := flag.Int64("interval", 1000, "Interval between lcd updates in ms")
 	satartService := flag.Bool("startService", true, "Start TCP server for urgent messages")
 	serviceAddr := flag.String("serviceAddr", "localhost:8681", "TCP server address")
+	httpServAddr := flag.String("listen-address", ":8001", "The address to listen on for HTTP requests.")
 
 	flag.Parse()
 
@@ -45,6 +49,11 @@ func main() {
 	}
 	if *satartService {
 		ws.Start()
+	}
+
+	if *httpServAddr != "" {
+		http.Handle("/metrics", prometheus.Handler())
+		go http.ListenAndServe(*httpServAddr, nil)
 	}
 
 	log.Printf("main: interval: %d ms", *refreshInt)
