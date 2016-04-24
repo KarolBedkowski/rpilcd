@@ -142,13 +142,11 @@ func (m *MPD) GetStatus() (s *Status) {
 	s.Error = status["error"]
 	s.Playing = s.Status != "stop"
 	s.Volume = status["volume"]
-	s.Flags = ""
 
-	if status["repeat"] != "0" {
-		s.Flags += "R"
-	}
 	if status["random"] != "0" {
-		s.Flags += "S"
+		s.Flags = "S"
+	} else if status["repeat"] != "0" {
+		s.Flags = "R"
 	}
 
 	song, err := con.CurrentSong()

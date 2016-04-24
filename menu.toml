@@ -1,0 +1,30 @@
+[menu]
+
+	name = "main"
+
+	[[menu.items]]
+		name = "mpd"
+
+		[[menu.items.items]]
+		name = "play"
+		cmd = "mpc play"
+		kind = "cmd"
+
+		[[menu.items.items]]
+		name = "stop"
+		cmd = "mpc stop"
+		kind = "cmd"
+
+	[[menu.items]]
+		name = "pogoda"
+
+		[[menu.items.items]]
+		name = "temp"
+		cmd = "temp"
+		kind = "cmd"
+
+		[[menu.items.items]]
+		name = "pred"
+		cmd = "temp-pred"
+		kind = "cmd"
+	
