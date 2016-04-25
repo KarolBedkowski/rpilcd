@@ -17,7 +17,7 @@ func NewLirc() *Lirc {
 	var err error
 	l.ir, err = lirc.Init("/var/run/lirc/lircd")
 	if err != nil {
-		panic(err)
+		return l
 	}
 
 	l.ir.Handle("*", "*", l.handler)

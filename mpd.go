@@ -203,3 +203,82 @@ func (m *MPD) GetStatus() (s *Status) {
 	s.CurrentSong = strings.Join(res, "; ")
 	return
 }
+
+func (m *MPD) Play() {
+	con, err := mpd.Dial("tcp", *mpdHost)
+	defer con.Close()
+	if err == nil {
+		con.Play(-1)
+	}
+}
+
+func (m *MPD) Stop() {
+	con, err := mpd.Dial("tcp", *mpdHost)
+	defer con.Stop()
+	if err == nil {
+		con.Stop()
+	}
+}
+
+func (m *MPD) Pause() {
+	con, err := mpd.Dial("tcp", *mpdHost)
+	defer con.Close()
+	if err == nil {
+		if stat, err := con.Status(); err == nil {
+			err = con.Pause(stat["state"] != "pause")
+		}
+	}
+}
+
+func (m *MPD) Next() {
+	con, err := mpd.Dial("tcp", *mpdHost)
+	defer con.Stop()
+	if err == nil {
+		con.Next()
+	}
+}
+
+func (m *MPD) Prev() {
+	con, err := mpd.Dial("tcp", *mpdHost)
+	defer con.Stop()
+	if err == nil {
+		con.Previous()
+	}
+}
+
+func (m *MPD) VolUp() {
+	con, err := mpd.Dial("tcp", *mpdHost)
+	defer con.Close()
+	if err == nil {
+		if stat, err := con.Status(); err == nil {
+			vol, err := strconv.Atoi(stat["volume"])
+			if err != nil {
+				return
+			}
+			vol += 5
+			if vol > 100 {
+				vol = 100
+			}
+			con.SetVolume(vol)
+		}
+	}
+}
+
+func (m *MPD) VolDown() {
+	con, err := mpd.Dial("tcp", *mpdHost)
+	defer con.Close()
+	if err == nil {
+		if stat, err := con.Status(); err == nil {
+			vol, err := strconv.Atoi(stat["volume"])
+			if err != nil {
+				return
+			}
+			vol -= 5
+			if vol < 0 {
+				vol = 0
+			}
+			con.SetVolume(vol)
+		}
+	}
+
+}

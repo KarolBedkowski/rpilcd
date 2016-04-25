@@ -1,0 +1,68 @@
+[menu]
+
+	name = "main"
+
+	[[menu.items]]
+		name = "mpd"
+
+		[[menu.items.items]]
+		name = "playlists"
+		
+			[[menu.items.items.items]]
+			name = "playlist1"
+			cmd = "mpd_playlist_1"
+			kind = "cmd"
+			
+			[[menu.items.items.items]]
+			name = "playlist2"
+			cmd = "mpd_playlist_2"
+			kind = "cmd"
+			
+			[[menu.items.items.items]]
+			name = "playlist3"
+			cmd = "mpd_playlist_3"
+			kind = "cmd"
+
+		[[menu.items.items]]
+		name = "mpd restart"
+		cmd = "sudo"
+		args = ["service", "mpd", "restart"]
+		kind = "cmd"
+
+	[[menu.items]]
+		name = "pogoda"
+
+		[[menu.items.items]]
+		name = "curr"
+		cmd = "get_weather.sh"
+		kind = "cmd"
+
+		[[menu.items.items]]
+		name = "pred"
+		cmd = "temp-pred"
+		kind = "cmd"
+	
+	[[menu.items]]
+		name = "info"
+
+		[[menu.items.items]]
+		name = "ifconfig"
+		cmd = "get_ifaceaddr.sh"
+		kind = "cmd"
+
+[keys]
+	[keys.menu]
+	show = "KEY_OPTION"
+	back = "KEY_BACK"
+	up = "KEY_VOLUMEUP"
+	down = "KEY_VOLUMEDOWN"
+	select = "KEY_PLAY"
+
+	[keys.mpd]
+	play = "KEY_PLAY"
+	stop = "KEY_STOP"
+	pause = "KEY_PAUSE"
+	next = "KEY_NEXT"
+	prev = "KEY_PREVIOUS"
+	vol_up = "KEY_VOLUMEUP"
+	vol_down = "KEY_VOLUMEDOWN"
