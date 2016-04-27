@@ -1,53 +1,66 @@
 [menu]
 
-	name = "main"
+	label = "main"
 
 	[[menu.items]]
-		name = "mpd"
+		label = "mpd"
 
 		[[menu.items.items]]
-		name = "playlists"
+		label = "playlists"
 		
 			[[menu.items.items.items]]
-			name = "playlist1"
+			label = "playlist1"
 			cmd = "mpd_playlist_1"
 			kind = "cmd"
 			
 			[[menu.items.items.items]]
-			name = "playlist2"
+			label = "playlist2"
 			cmd = "mpd_playlist_2"
 			kind = "cmd"
 			
 			[[menu.items.items.items]]
-			name = "playlist3"
+			label = "playlist3"
 			cmd = "mpd_playlist_3"
 			kind = "cmd"
 
 		[[menu.items.items]]
-		name = "mpd restart"
+		label = "mpd restart"
 		cmd = "sudo"
 		args = ["service", "mpd", "restart"]
 		kind = "cmd"
 
 	[[menu.items]]
-		name = "pogoda"
+		label = "pogoda"
 
 		[[menu.items.items]]
-		name = "curr"
+		label = "curr"
 		cmd = "get_weather.sh"
 		kind = "cmd"
 
 		[[menu.items.items]]
-		name = "pred"
+		label = "pred"
 		cmd = "temp-pred"
 		kind = "cmd"
 	
 	[[menu.items]]
-		name = "info"
+		label = "info"
 
 		[[menu.items.items]]
-		name = "ifconfig"
+		label = "ifconfig"
 		cmd = "get_ifaceaddr.sh"
+		kind = "cmd"
+	
+	[[menu.items]]
+		label = "power"
+
+		[[menu.items.items]]
+		label = "shutdown"
+		cmd = "halt"
+		kind = "cmd"
+		
+		[[menu.items.items]]
+		label = "reboot"
+		cmd = "reboot"
 		kind = "cmd"
 
 [keys]

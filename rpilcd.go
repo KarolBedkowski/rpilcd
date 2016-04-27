@@ -62,7 +62,7 @@ func main() {
 	log.Printf("main: interval: %d ms", *refreshInt)
 
 	mpd := NewMPD()
-	dispP := NewDisplayP(*soutput, int(*refreshInt))
+	dispP := NewDisplayP(*soutput, int(*refreshInt), mpd)
 
 	lirc := NewLirc()
 
@@ -80,7 +80,7 @@ func main() {
 	}()
 
 	mpd.Connect()
-	dispP.lastMpdMessage = mpd.GetStatus()
+	dispP.UpdateMpdStatus(mpd.GetStatus())
 
 	time.Sleep(1 * time.Second)
 
@@ -92,8 +92,6 @@ func main() {
 	signal.Notify(sig, os.Interrupt, os.Kill)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 
-	lastMpdAction := time.Now()
-
 	for {
 		// TODO: handle lirc event
 		select {
@@ -102,42 +100,14 @@ func main() {
 		case ev := <-lirc.Events:
 			{
 				log.Printf("lirc event: %s", ev)
-				if ev == configuration.Keys.Menu.Show {
-					dispP.ShowMenu()
-				} else if dispP.MenuDisplayed() {
-					dispP.NewCommand(ev)
-				} else {
-
-					now := time.Now()
-					if now.Sub(lastMpdAction) < minMpdActInterval {
-						continue
-					}
-					lastMpdAction = now
-
-					switch ev {
-					case configuration.Keys.MPD.Play:
-						mpd.Play()
-					case configuration.Keys.MPD.Stop:
-						mpd.Stop()
-					case configuration.Keys.MPD.Pause:
-						mpd.Pause()
-					case configuration.Keys.MPD.Next:
-						mpd.Next()
-					case configuration.Keys.MPD.Prev:
-						mpd.Prev()
-					case configuration.Keys.MPD.VolUp:
-						mpd.VolUp()
-					case configuration.Keys.MPD.VolDown:
-						mpd.VolDown()
-					}
-				}
+				dispP.NewCommand(ev)
 			}
 		case msg := <-ws.Message:
 			dispP.NewCommand(msg)
 		case msg := <-mpd.Message:
-			dispP.NewMsg(msg)
+			dispP.UpdateMpdStatus(msg)
 		case <-ticker.C:
-			dispP.DisplayStatus()
+			dispP.Tick()
 		}
 	}
 }
