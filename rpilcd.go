@@ -56,7 +56,9 @@ func main() {
 	}
 
 	err := loadConfiguration("conf.toml")
-	log.Printf("Load menu: %s", err)
+	if err != nil {
+		panic(err)
+	}
 	log.Printf("menu: %s", configuration)
 	log.Printf("main: interval: %d ms", *refreshInt)
 
