@@ -77,3 +77,4 @@
 	prev = "KEY_PREVIOUS"
 	vol_up = "KEY_VOLUMEUP"
 	vol_down = "KEY_VOLUMEDOWN"
+	vol_mute = "KEY_MUTE"

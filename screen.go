@@ -170,6 +170,8 @@ func (s *StatusScreen) Action(action string) (result int, screen Screen) {
 		MPDVolUp()
 	case configuration.Keys.MPD.VolDown:
 		MPDVolDown()
+	case configuration.Keys.MPD.VolMute:
+		MPDVolMute()
 	}
 	return ActionResultOk, nil
 }

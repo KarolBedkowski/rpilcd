@@ -311,3 +311,30 @@ func MPDPlayPlaylist(playlist string) {
 		log.Printf("MPD.PlayPlaylist error: %s", err)
 	}
 }
+
+var preMuteVol = -1
+
+func MPDVolMute() {
+	con, err := mpd.Dial("tcp", *mpdHost)
+	if err == nil {
+		defer con.Close()
+		if stat, err := con.Status(); err == nil {
+			vol, err := strconv.Atoi(stat["volume"])
+			if err != nil {
+				return
+			}
+			if vol == 0 {
+				if preMuteVol > 0 {
+					vol = preMuteVol
+				} else {
+					vol = 100
+				}
+			} else {
+				preMuteVol = vol
+				vol = 0
+			}
+			con.SetVolume(vol)
+		}
+	}
+
+}

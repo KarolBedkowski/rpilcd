@@ -25,6 +25,7 @@ type (
 			Prev    string
 			VolUp   string
 			VolDown string
+			VolMute string
 		}
 	}
 )
