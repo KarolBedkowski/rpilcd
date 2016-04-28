@@ -171,7 +171,7 @@ func (s *StatusScreen) Action(action string) (result int, screen Screen) {
 	case configuration.Keys.MPD.VolDown:
 		MPDVolDown()
 	}
-	return ActionResultNop, nil
+	return ActionResultOk, nil
 }
 
 func (s *StatusScreen) MpdUpdate(st *Status) {
