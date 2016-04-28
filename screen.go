@@ -18,10 +18,11 @@ const (
 )
 
 const (
-	CharPlay  = "\b00010000"
-	CharPause = "\b10100000"
-	CharStop  = "\b10110111"
-	CharError = "!"
+	CharPlay   = "\x00"
+	CharPause  = "\x01"
+	CharStop   = "\x02"
+	CharError  = "!"
+	CharCursor = "\x7e"
 )
 
 // Screen define single screen for display
@@ -82,9 +83,9 @@ type MenuItem struct {
 func (t *MenuItem) Show() (res []string) {
 	for i := t.offset; i < len(t.Items) && i < (t.offset+lcdHeight); i++ {
 		if i == t.cursor {
-			res = append(res, "->"+t.Items[i].Label)
+			res = append(res, CharCursor+t.Items[i].Label)
 		} else {
-			res = append(res, "  "+t.Items[i].Label)
+			res = append(res, " "+t.Items[i].Label)
 		}
 	}
 	for len(res) < lcdHeight {
@@ -145,7 +146,7 @@ func (s *StatusScreen) Show() (res []string) {
 	if s.lastMpdMessage == nil || !s.lastMpdMessage.Playing || len(s.last) == 0 {
 		log.Printf("lastMpdMessage = %s", s.lastMpdMessage.String())
 		n := time.Now()
-		res = append(res, loadAvg()+" | stop")
+		res = append(res, loadAvg()+" "+mpdStatusToStr("stop"))
 		res = append(res, n.Format("01-02 15:04:05"))
 	} else {
 		res = s.last[:]
@@ -179,14 +180,14 @@ func (s *StatusScreen) MpdUpdate(st *Status) {
 	if st != nil {
 		if st.Error != "" {
 			s.last = []string{
-				loadAvg() + " | " + mpdStatusToStr(st.Status) + " " + st.Volume,
+				loadAvg() + " " + mpdStatusToStr(st.Status) + " " + st.Volume,
 				"Err:" + removeNlChars(st.Error),
 			}
 			return
 		}
 		if st.Status != "stop" {
 			s.last = []string{
-				loadAvg() + " | " + mpdStatusToStr(st.Status) + st.Flags + " " + st.Volume,
+				loadAvg() + " " + mpdStatusToStr(st.Status) + " " + st.Flags + " " + st.Volume,
 				removeNlChars(st.CurrentSong),
 			}
 			return
@@ -195,7 +196,7 @@ func (s *StatusScreen) MpdUpdate(st *Status) {
 
 	n := time.Now()
 	s.last = []string{
-		loadAvg() + " | " + mpdStatusToStr(st.Status),
+		loadAvg() + " " + mpdStatusToStr(st.Status),
 		n.Format("01-02 15:04:05"),
 	}
 }
@@ -296,9 +297,9 @@ func (m *MPDPlaylistsScreen) Show() (res []string) {
 	} else {
 		for i := m.offset; i < len(m.playlists) && i < (m.offset+lcdHeight); i++ {
 			if i == m.cursor {
-				res = append(res, "->"+m.playlists[i])
+				res = append(res, CharCursor+m.playlists[i])
 			} else {
-				res = append(res, "  "+m.playlists[i])
+				res = append(res, " "+m.playlists[i])
 			}
 		}
 	}
