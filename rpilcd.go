@@ -58,11 +58,10 @@ func main() {
 	err := loadConfiguration("conf.toml")
 	log.Printf("Load menu: %s", err)
 	log.Printf("menu: %s", configuration)
-
 	log.Printf("main: interval: %d ms", *refreshInt)
 
 	mpd := NewMPD()
-	dispP := NewDisplayP(*soutput, int(*refreshInt), mpd)
+	scrMgr := NewScreenMgr(*soutput, int(*refreshInt))
 
 	lirc := NewLirc()
 
@@ -71,7 +70,7 @@ func main() {
 		//	log.Printf("Recover: %v", e)
 		//}
 		log.Printf("main.defer: closing disp")
-		dispP.Close()
+		scrMgr.Close()
 		log.Printf("main.defer: closing mpd")
 		mpd.Close()
 		lirc.Close()
@@ -80,7 +79,7 @@ func main() {
 	}()
 
 	mpd.Connect()
-	dispP.UpdateMpdStatus(mpd.GetStatus())
+	scrMgr.UpdateMpdStatus(MPDGetStatus())
 
 	time.Sleep(1 * time.Second)
 
@@ -93,21 +92,17 @@ func main() {
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 
 	for {
-		// TODO: handle lirc event
 		select {
 		case _ = <-sig:
 			return
 		case ev := <-lirc.Events:
-			{
-				log.Printf("lirc event: %s", ev)
-				dispP.NewCommand(ev)
-			}
+			scrMgr.NewCommand(ev)
 		case msg := <-ws.Message:
-			dispP.NewCommand(msg)
+			scrMgr.NewCommand(msg)
 		case msg := <-mpd.Message:
-			dispP.UpdateMpdStatus(msg)
+			scrMgr.UpdateMpdStatus(msg)
 		case <-ticker.C:
-			dispP.Tick()
+			scrMgr.Tick()
 		}
 	}
 }

@@ -7,26 +7,13 @@
 
 		[[menu.items.items]]
 		label = "playlists"
-		
-			[[menu.items.items.items]]
-			label = "playlist1"
-			cmd = "mpd_playlist_1"
-			kind = "cmd"
+		cmd = "playlists"
+		kind = "mpd"
 			
-			[[menu.items.items.items]]
-			label = "playlist2"
-			cmd = "mpd_playlist_2"
-			kind = "cmd"
-			
-			[[menu.items.items.items]]
-			label = "playlist3"
-			cmd = "mpd_playlist_3"
-			kind = "cmd"
-
 		[[menu.items.items]]
 		label = "mpd restart"
-		cmd = "sudo"
-		args = ["service", "mpd", "restart"]
+		cmd = "service"
+		args = ["mpd", "restart"]
 		kind = "cmd"
 
 	[[menu.items]]
@@ -64,6 +51,8 @@
 		kind = "cmd"
 
 [keys]
+	toggle_lcd = "KEY_7"
+
 	[keys.menu]
 	show = "KEY_OPTION"
 	back = "KEY_BACK"

@@ -39,18 +39,20 @@ func (tsl *textScrollerLine) scroll() string {
 
 // TextScroller format some text to display in few character display
 type TextScroller struct {
-	Width int
-	lines []*textScrollerLine
+	Width  int
+	Height int
+	lines  []*textScrollerLine
 
 	mu sync.Mutex
 }
 
 // NewTextScroller create new TextScroller struct
-func NewTextScroller(width int) *TextScroller {
+func NewTextScroller(width, height int) *TextScroller {
 	res := &TextScroller{
-		Width: width,
+		Width:  width,
+		Height: height,
 	}
-	for i := 0; i < 2; i++ {
+	for i := 0; i < height; i++ {
 		l := &textScrollerLine{}
 		l.set(strings.Repeat(" ", width), width)
 		res.lines = append(res.lines, l)
@@ -63,7 +65,7 @@ func (t *TextScroller) Set(text string) {
 	log.Printf("TextScroller.Set: %v", text)
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	for line, l := range strings.SplitN(text, "\n", 2) {
+	for line, l := range strings.SplitN(text, "\n", t.Height) {
 		t.lines[line].set(l, t.Width)
 	}
 }

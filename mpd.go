@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/turbowookie/gompd/mpd"
+	"github.com/fhs/gompd/mpd"
 	"log"
 	"strconv"
 	"strings"
@@ -56,7 +56,7 @@ func (m *MPD) watch() (err error) {
 
 	log.Println("mpd.watch: starting watch")
 
-	m.Message <- m.GetStatus()
+	m.Message <- MPDGetStatus()
 
 	for {
 		if m.watcher == nil {
@@ -70,9 +70,9 @@ func (m *MPD) watch() (err error) {
 			log.Printf("mpd.watch: event: %v", subsystem)
 			switch subsystem {
 			case "player":
-				m.Message <- m.GetStatus()
+				m.Message <- MPDGetStatus()
 			default:
-				m.Message <- m.GetStatus()
+				m.Message <- MPDGetStatus()
 			}
 		case err := <-m.watcher.Error:
 			log.Printf("mpd.watch: error event: %v", err)
@@ -116,7 +116,7 @@ func (m *MPD) Close() {
 }
 
 // GetStatus connect to mpd and get current status
-func (m *MPD) GetStatus() (s *Status) {
+func MPDGetStatus() (s *Status) {
 	s = &Status{
 		Playing:     false,
 		Flags:       "ERR",
@@ -204,52 +204,52 @@ func (m *MPD) GetStatus() (s *Status) {
 	return
 }
 
-func (m *MPD) Play() {
+func MPDPlay() {
 	con, err := mpd.Dial("tcp", *mpdHost)
-	defer con.Close()
 	if err == nil {
+		defer con.Close()
 		con.Play(-1)
 	}
 }
 
-func (m *MPD) Stop() {
+func MPDStop() {
 	con, err := mpd.Dial("tcp", *mpdHost)
-	defer con.Stop()
 	if err == nil {
+		defer con.Close()
 		con.Stop()
 	}
 }
 
-func (m *MPD) Pause() {
+func MPDPause() {
 	con, err := mpd.Dial("tcp", *mpdHost)
-	defer con.Close()
 	if err == nil {
+		defer con.Close()
 		if stat, err := con.Status(); err == nil {
 			err = con.Pause(stat["state"] != "pause")
 		}
 	}
 }
 
-func (m *MPD) Next() {
+func MPDNext() {
 	con, err := mpd.Dial("tcp", *mpdHost)
-	defer con.Stop()
 	if err == nil {
+		defer con.Close()
 		con.Next()
 	}
 }
 
-func (m *MPD) Prev() {
+func MPDPrev() {
 	con, err := mpd.Dial("tcp", *mpdHost)
-	defer con.Stop()
 	if err == nil {
+		defer con.Close()
 		con.Previous()
 	}
 }
 
-func (m *MPD) VolUp() {
+func MPDVolUp() {
 	con, err := mpd.Dial("tcp", *mpdHost)
-	defer con.Close()
 	if err == nil {
+		defer con.Close()
 		if stat, err := con.Status(); err == nil {
 			vol, err := strconv.Atoi(stat["volume"])
 			if err != nil {
@@ -264,10 +264,10 @@ func (m *MPD) VolUp() {
 	}
 }
 
-func (m *MPD) VolDown() {
+func MPDVolDown() {
 	con, err := mpd.Dial("tcp", *mpdHost)
-	defer con.Close()
 	if err == nil {
+		defer con.Close()
 		if stat, err := con.Status(); err == nil {
 			vol, err := strconv.Atoi(stat["volume"])
 			if err != nil {
@@ -280,5 +280,34 @@ func (m *MPD) VolDown() {
 			con.SetVolume(vol)
 		}
 	}
+}
 
+func MPDPlaylists() (pls []string) {
+	con, err := mpd.Dial("tcp", *mpdHost)
+	if err == nil {
+		defer con.Close()
+		playlists, err := con.ListPlaylists()
+		if err == nil {
+			for _, pl := range playlists {
+				pls = append(pls, pl["playlist"])
+			}
+		} else {
+			log.Printf("MPD.Playlists list error: %s", err)
+		}
+	} else {
+		log.Printf("MPD.Playlists error: %s", err)
+	}
+	return
+}
+
+func MPDPlayPlaylist(playlist string) {
+	con, err := mpd.Dial("tcp", *mpdHost)
+	if err == nil {
+		defer con.Close()
+		con.Clear()
+		con.PlaylistLoad(playlist, -1, -1)
+		con.Play(-1)
+	} else {
+		log.Printf("MPD.PlayPlaylist error: %s", err)
+	}
 }

@@ -8,6 +8,8 @@ import (
 
 type (
 	Keys struct {
+		ToggleLCD string `toml:"toggle_lcd"`
+
 		Menu struct {
 			Show   string
 			Back   string
