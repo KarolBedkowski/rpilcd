@@ -49,9 +49,18 @@
 		label = "reboot"
 		cmd = "reboot"
 		kind = "cmd"
+	
+	[[menu.items]]
+		label = "other"
+
+		[[menu.items.items]]
+		label = "restart rpilcd"
+		cmd = "service"
+		args = ["rpilcd", "restart"]
+		kind = "cmd"
 
 [keys]
-	toggle_lcd = "KEY_7"
+	toggle_lcd = "KEY_MODE"
 
 	[keys.menu]
 	show = "KEY_OPTION"

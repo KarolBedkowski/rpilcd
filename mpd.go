@@ -14,8 +14,8 @@ var (
 	mpdHost = flag.String("mpdHost", "pi:6600", "MPD address")
 )
 
-// Status of MPD daemon
-type Status struct {
+// MPDStatus of MPD daemon
+type MPDStatus struct {
 	CurrentSong string
 	Playing     bool
 	Status      string
@@ -24,14 +24,14 @@ type Status struct {
 	Error       string
 }
 
-func (s *Status) String() string {
-	return fmt.Sprintf("Status[Playing=%v Status=%v Flags=%v Volume=%v CurrentSong='%v']",
+func (s *MPDStatus) String() string {
+	return fmt.Sprintf("MPDStatus[Playing=%v Status=%v Flags=%v Volume=%v CurrentSong='%v']",
 		s.Playing, s.Status, s.Flags, s.Volume, s.CurrentSong)
 }
 
 // MPD client
 type MPD struct {
-	Message chan *Status
+	Message chan *MPDStatus
 	watcher *mpd.Watcher
 	end     chan bool
 	active  bool
@@ -40,7 +40,7 @@ type MPD struct {
 // NewMPD create new MPD client
 func NewMPD() *MPD {
 	return &MPD{
-		Message: make(chan *Status, 10),
+		Message: make(chan *MPDStatus, 10),
 		end:     make(chan bool, 1),
 		active:  true,
 	}
@@ -116,8 +116,8 @@ func (m *MPD) Close() {
 }
 
 // GetStatus connect to mpd and get current status
-func MPDGetStatus() (s *Status) {
-	s = &Status{
+func MPDGetStatus() (s *MPDStatus) {
+	s = &MPDStatus{
 		Playing:     false,
 		Flags:       "ERR",
 		CurrentSong: "",

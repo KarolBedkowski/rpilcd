@@ -45,6 +45,7 @@ func NewLcd() (l *Lcd) {
 		return nil
 	}
 
+	// Custom characters
 	// play
 	l.lcd.SetChar(0, []byte{0x0, 0x8, 0xc, 0xe, 0xc, 0x8, 0x0, 0x0})
 	// pause

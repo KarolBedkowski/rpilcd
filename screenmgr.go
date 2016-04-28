@@ -110,7 +110,7 @@ func (d *ScreenMgr) display() {
 	d.disp.Display(d.ts.Tick())
 }
 
-func (d *ScreenMgr) UpdateMpdStatus(status *Status) {
+func (d *ScreenMgr) UpdateMpdStatus(status *MPDStatus) {
 	d.statusScr.MpdUpdate(status)
 }
 

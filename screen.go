@@ -138,7 +138,7 @@ func (t *MenuItem) execute() (result int, screen Screen) {
 }
 
 type StatusScreen struct {
-	lastMpdMessage *Status
+	lastMpdMessage *MPDStatus
 	last           []string
 }
 
@@ -174,7 +174,7 @@ func (s *StatusScreen) Action(action string) (result int, screen Screen) {
 	return ActionResultOk, nil
 }
 
-func (s *StatusScreen) MpdUpdate(st *Status) {
+func (s *StatusScreen) MpdUpdate(st *MPDStatus) {
 	s.lastMpdMessage = st
 
 	if st != nil {

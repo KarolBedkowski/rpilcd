@@ -68,9 +68,9 @@ func main() {
 	lirc := NewLirc()
 
 	defer func() {
-		//if e := recover(); e != nil {
-		//	log.Printf("Recover: %v", e)
-		//}
+		if e := recover(); e != nil {
+			log.Printf("Recover: %v", e)
+		}
 		log.Printf("main.defer: closing disp")
 		scrMgr.Close()
 		log.Printf("main.defer: closing mpd")
