@@ -131,7 +131,9 @@ func (t *MenuItem) execute() (result int, screen Screen) {
 	case "mpd":
 		switch t.Cmd {
 		case "playlists":
-			return ActionResultOk, NewMPDPlaylistScreen()
+			return ActionResultOk, NewMPDPlaylistsScreen()
+		case "playlist":
+			return ActionResultOk, NewMPDCurrPlaylistScreen()
 		}
 	}
 	return ActionResultNop, nil
@@ -157,7 +159,7 @@ func (s *StatusScreen) Show() (res []string) {
 func (s *StatusScreen) Action(action string) (result int, screen Screen) {
 	switch action {
 	case configuration.Keys.MPD.Play:
-		MPDPlay()
+		MPDPlay(-1)
 	case configuration.Keys.MPD.Stop:
 		MPDStop()
 	case configuration.Keys.MPD.Pause:
@@ -287,7 +289,7 @@ type MPDPlaylistsScreen struct {
 	playlists []string
 }
 
-func NewMPDPlaylistScreen() *MPDPlaylistsScreen {
+func NewMPDPlaylistsScreen() *MPDPlaylistsScreen {
 	return &MPDPlaylistsScreen{
 		playlists: MPDPlaylists(),
 	}
@@ -322,6 +324,53 @@ func (m *MPDPlaylistsScreen) Action(action string) (result int, screen Screen) {
 	case configuration.Keys.Menu.Select:
 		playlist := m.playlists[m.cursor]
 		MPDPlayPlaylist(playlist)
+		return ActionResultOk, nil
+	case configuration.Keys.Menu.Back:
+		return ActionResultBack, nil
+	}
+	return
+}
+
+type MPDCurrPlaylistScreen struct {
+	offset int
+	cursor int
+	songs  []string
+}
+
+func NewMPDCurrPlaylistScreen() *MPDCurrPlaylistScreen {
+	return &MPDCurrPlaylistScreen{
+		songs: MPDCurrPlaylist(),
+	}
+}
+
+func (m *MPDCurrPlaylistScreen) Show() (res []string) {
+	if len(m.songs) == 0 {
+		res = append(res, "No playlists")
+	} else {
+		for i := m.offset; i < len(m.songs) && i < (m.offset+lcdHeight); i++ {
+			if i == m.cursor {
+				res = append(res, CharCursor+m.songs[i])
+			} else {
+				res = append(res, " "+m.songs[i])
+			}
+		}
+	}
+	for len(res) < lcdHeight {
+		res = append(res, "")
+	}
+	return
+}
+
+func (m *MPDCurrPlaylistScreen) Action(action string) (result int, screen Screen) {
+	switch action {
+	case configuration.Keys.Menu.Up:
+		m.cursor, m.offset = cursorScrollUp(m.cursor, m.offset, len(m.songs))
+		return ActionResultOk, nil
+	case configuration.Keys.Menu.Down:
+		m.cursor, m.offset = cursorScrollDown(m.cursor, m.offset, len(m.songs))
+		return ActionResultOk, nil
+	case configuration.Keys.Menu.Select:
+		MPDPlay(m.cursor)
 		return ActionResultOk, nil
 	case configuration.Keys.Menu.Back:
 		return ActionResultBack, nil

@@ -6,6 +6,11 @@
 		label = "mpd"
 
 		[[menu.items.items]]
+		label = "playlist"
+		cmd = "playlist"
+		kind = "mpd"
+
+		[[menu.items.items]]
 		label = "playlists"
 		cmd = "playlists"
 		kind = "mpd"

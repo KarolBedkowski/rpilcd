@@ -199,11 +199,11 @@ func MPDGetStatus() (s *MPDStatus) {
 	return
 }
 
-func MPDPlay() {
+func MPDPlay(index int) {
 	con, err := mpd.Dial("tcp", configuration.MPDConf.Host)
 	if err == nil {
 		defer con.Close()
-		con.Play(-1)
+		con.Play(index)
 	}
 }
 
@@ -301,10 +301,32 @@ func MPDPlayPlaylist(playlist string) {
 		defer con.Close()
 		con.Clear()
 		con.PlaylistLoad(playlist, -1, -1)
-		con.Play(-1)
+		con.Play(0)
 	} else {
 		log.Printf("MPD.PlayPlaylist error: %s", err)
 	}
+}
+
+func MPDCurrPlaylist() (pls []string) {
+	con, err := mpd.Dial("tcp", configuration.MPDConf.Host)
+	if err == nil {
+		defer con.Close()
+		playlists, err := con.PlaylistInfo(-1, -1)
+		if err == nil {
+			for _, pl := range playlists {
+				if title, ok := pl["Title"]; ok {
+					pls = append(pls, title)
+				} else {
+					pls = append(pls, pl["file"])
+				}
+			}
+		} else {
+			log.Printf("MPD.CurrPlaylist list error: %s", err)
+		}
+	} else {
+		log.Printf("MPD.CurrPlaylist error: %s", err)
+	}
+	return
 }
 
 var preMuteVol = -1
