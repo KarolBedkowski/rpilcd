@@ -14,13 +14,23 @@ func NewLirc() *Lirc {
 	l := &Lirc{
 		Events: make(chan string, 10),
 	}
+	if configuration.LircConf.PidFile == "" {
+		log.Printf("Lirc not configured")
+		return l
+	}
+
 	var err error
-	l.ir, err = lirc.Init("/var/run/lirc/lircd")
+	l.ir, err = lirc.Init(configuration.LircConf.PidFile)
 	if err != nil {
 		return l
 	}
 
-	l.ir.Handle("*", "*", l.handler)
+	remote := configuration.LircConf.Remote
+	if remote == "" {
+		remote = "*"
+	}
+
+	l.ir.Handle(remote, "*", l.handler)
 
 	go l.ir.Run()
 
@@ -33,5 +43,7 @@ func (l *Lirc) handler(event lirc.Event) {
 }
 
 func (l *Lirc) Close() {
-	l.ir.Close()
+	if l.ir != nil {
+		l.ir.Close()
+	}
 }

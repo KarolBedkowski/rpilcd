@@ -17,7 +17,7 @@ type ScreenMgr struct {
 	lastCmdTime time.Time
 }
 
-func NewScreenMgr(console bool, refreshInt int) *ScreenMgr {
+func NewScreenMgr(console bool) *ScreenMgr {
 	d := &ScreenMgr{}
 	if console {
 		log.Printf("main: starting console")

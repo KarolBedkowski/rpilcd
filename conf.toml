@@ -78,3 +78,17 @@
 	vol_up = "KEY_VOLUMEUP"
 	vol_down = "KEY_VOLUMEDOWN"
 	vol_mute = "KEY_MUTE"
+
+[mpd]
+host = "pi:6600"
+
+[display]
+refresh_interval = 1000
+
+[services]
+http_server_addr = ":8001"
+tcp_server_addr = "localhost:8681"
+
+[lirc]
+pid_file = "/var/run/lirc/lircd"
+remote = "*"

@@ -36,35 +36,28 @@ func main() {
 	log.Printf("RPI LCD ver %s starting...", AppVersion)
 
 	soutput := flag.Bool("console", false, "Print on console instead of lcd")
-	refreshInt := flag.Int64("interval", 1000, "Interval between lcd updates in ms")
-	satartService := flag.Bool("startService", true, "Start TCP server for urgent messages")
-	serviceAddr := flag.String("serviceAddr", "localhost:8681", "TCP server address")
-	httpServAddr := flag.String("listen-address", ":8001", "The address to listen on for HTTP requests.")
-
 	flag.Parse()
 
-	ws := UMServer{
-		Addr: *serviceAddr,
-	}
-	if *satartService {
-		ws.Start()
-	}
-
-	if *httpServAddr != "" {
-		http.Handle("/metrics", prometheus.Handler())
-		go http.ListenAndServe(*httpServAddr, nil)
-	}
-
-	err := loadConfiguration("conf.toml")
+	err := loadConfiguration()
 	if err != nil {
 		panic(err)
 	}
-	log.Printf("menu: %s", configuration)
-	log.Printf("main: interval: %d ms", *refreshInt)
+	log.Printf("configuration: %#v", configuration)
+
+	ws := UMServer{
+		Addr: configuration.ServicesConf.TCPServerAddr,
+	}
+	if configuration.ServicesConf.TCPServerAddr != "" {
+		ws.Start()
+	}
+
+	if configuration.ServicesConf.HTTPServerAddr != "" {
+		http.Handle("/metrics", prometheus.Handler())
+		go http.ListenAndServe(configuration.ServicesConf.HTTPServerAddr, nil)
+	}
 
 	mpd := NewMPD()
-	scrMgr := NewScreenMgr(*soutput, int(*refreshInt))
-
+	scrMgr := NewScreenMgr(*soutput)
 	lirc := NewLirc()
 
 	defer func() {
@@ -87,16 +80,27 @@ func main() {
 
 	log.Printf("main: entering loop")
 
-	ticker := time.NewTicker(time.Duration(*refreshInt) * time.Millisecond)
+	ticker := createTicker()
 
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt, os.Kill)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 
+	sigHup := make(chan os.Signal, 1)
+	signal.Notify(sig, syscall.SIGHUP)
+
 	for {
 		select {
 		case _ = <-sig:
 			return
+		case _ = <-sigHup:
+			log.Printf("Reloading configuration")
+			ticker.Stop()
+			err := loadConfiguration()
+			if err != nil {
+				panic(err)
+			}
+			ticker = createTicker()
 		case ev := <-lirc.Events:
 			scrMgr.NewCommand(ev)
 		case msg := <-ws.Message:
@@ -107,4 +111,8 @@ func main() {
 			scrMgr.Tick()
 		}
 	}
+}
+
+func createTicker() *time.Ticker {
+	return time.NewTicker(time.Duration(configuration.DisplayConf.RefreshInterval) * time.Millisecond)
 }
