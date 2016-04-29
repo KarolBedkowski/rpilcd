@@ -14,10 +14,10 @@ type textScrollerLine struct {
 }
 
 func (tsl *textScrollerLine) set(inp string, width int) {
-	log.Printf("textScrollerLine.set : %+v", inp)
 	if inp == tsl.lineOrg {
 		return
 	}
+	log.Printf("textScrollerLine.set : %+v", inp)
 	tsl.hasCursor = len(inp) > 0 && inp[0] == CharCursor[0]
 	tsl.lineOrg = inp
 	tsl.needScroll = len(inp) > width
@@ -67,7 +67,7 @@ func NewTextScroller(width, height int) *TextScroller {
 
 // Set put some text to TextScroller
 func (t *TextScroller) Set(text string) {
-	log.Printf("TextScroller.Set: %v", text)
+	//log.Printf("TextScroller.Set: %v", text)
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	for line, l := range strings.SplitN(text, "\n", t.Height) {
