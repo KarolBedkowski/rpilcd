@@ -10,6 +10,7 @@ type textScrollerLine struct {
 	lineOrg    string
 	line       string
 	needScroll bool
+	hasCursor  bool
 }
 
 func (tsl *textScrollerLine) set(inp string, width int) {
@@ -17,6 +18,7 @@ func (tsl *textScrollerLine) set(inp string, width int) {
 	if inp == tsl.lineOrg {
 		return
 	}
+	tsl.hasCursor = len(inp) > 0 && inp[0] == CharCursor[0]
 	tsl.lineOrg = inp
 	tsl.needScroll = len(inp) > width
 	if tsl.needScroll {
@@ -31,8 +33,11 @@ func (tsl *textScrollerLine) set(inp string, width int) {
 
 func (tsl *textScrollerLine) scroll() string {
 	if tsl.needScroll {
-		line := tsl.line[1:] + string(tsl.line[0])
-		tsl.line = line
+		if tsl.hasCursor {
+			tsl.line = string(tsl.line[0]) + tsl.line[2:] + string(tsl.line[1])
+		} else {
+			tsl.line = tsl.line[1:] + string(tsl.line[0])
+		}
 	}
 	return tsl.line
 }
