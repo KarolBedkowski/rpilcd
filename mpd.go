@@ -190,7 +190,7 @@ func MPDGetStatus() (s *MPDStatus) {
 	}
 
 	if !hasATN {
-		if a, ok := song["File"]; ok && a != "" {
+		if a, ok := song["file"]; ok && a != "" {
 			res = append(res, a)
 		}
 	}
