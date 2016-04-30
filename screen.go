@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io/ioutil"
 	"log"
+	"os"
 	"os/exec"
 	"strings"
 	"sync"
@@ -71,13 +72,14 @@ func (t *TextScreen) Action(action string) (result int, screen Screen) {
 }
 
 type MenuItem struct {
-	Label  string
-	Cmd    string
-	Args   []string
-	Kind   string
-	Items  []*MenuItem
-	offset int
-	cursor int
+	Label           string
+	Cmd             string
+	Args            []string
+	Kind            string
+	Items           []*MenuItem
+	RunInBackground bool
+	offset          int
+	cursor          int
 }
 
 func (t *MenuItem) Show() (res []string) {
@@ -120,12 +122,26 @@ func (t *MenuItem) Action(action string) (result int, screen Screen) {
 func (t *MenuItem) execute() (result int, screen Screen) {
 	switch t.Kind {
 	case "cmd":
-		out, err := exec.Command(t.Cmd, t.Args...).CombinedOutput()
-		res := strings.TrimSpace(string(out))
-		if res == "" {
-			res = "<no output>"
+		var res string
+		if t.RunInBackground {
+			if process, err := os.StartProcess(t.Cmd, t.Args, &os.ProcAttr{}); err == nil {
+				if err = process.Release(); err != nil {
+					log.Printf("Start process error: err=%v", err)
+				} else {
+					res = "<started>"
+				}
+			} else {
+				log.Printf("Start process error: err=%v", err)
+				res = "Err: " + err.Error()
+			}
+		} else {
+			out, err := exec.Command(t.Cmd, t.Args...).CombinedOutput()
+			res := strings.TrimSpace(string(out))
+			if res == "" {
+				res = "<no output>"
+			}
+			log.Printf("Execute: err=%v, res=%v", err, res)
 		}
-		log.Printf("Execute: err=%v, res=%v", err, res)
 		lines := strings.Split(res, "\n")
 		return ActionResultOk, &TextScreen{Lines: lines}
 	case "mpd":

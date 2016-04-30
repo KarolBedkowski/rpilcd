@@ -47,13 +47,17 @@
 
 		[[menu.items.items]]
 		label = "shutdown"
-		cmd = "halt"
+		cmd = "shutdown"
+		args = ["-h", "0"]
 		kind = "cmd"
+		run_in_background = true
 		
 		[[menu.items.items]]
 		label = "reboot"
-		cmd = "reboot"
+		cmd = "shutdown"
+		args = ["-r", "0"]
 		kind = "cmd"
+		run_in_background = true
 	
 	[[menu.items]]
 		label = "other"
@@ -63,7 +67,7 @@
 		cmd = "service"
 		args = ["rpilcd", "restart"]
 		kind = "cmd"
-
+		
 [keys]
 	toggle_lcd = "KEY_MODE"
 
