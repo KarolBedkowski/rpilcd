@@ -104,9 +104,9 @@ func (d *ScreenMgr) currentScreen() Screen {
 
 func (d *ScreenMgr) display() {
 	screen := d.currentScreen()
-	lines := screen.Show()
+	lines, fixPart := screen.Show()
 	text := strings.Join(lines, "\n")
-	d.ts.Set(text)
+	d.ts.Set(text, fixPart)
 	d.disp.Display(d.ts.Tick())
 }
 

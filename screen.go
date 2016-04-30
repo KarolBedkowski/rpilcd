@@ -30,7 +30,7 @@ const (
 // Screen define single screen for display
 type Screen interface {
 	// Show return lines to display
-	Show() []string
+	Show() (res []string, fixPart int)
 	// Action perform some action on screen
 	Action(action string) (result int, screen Screen)
 }
@@ -40,7 +40,7 @@ type TextScreen struct {
 	offset int
 }
 
-func (t *TextScreen) Show() (res []string) {
+func (t *TextScreen) Show() (res []string, fixPart int) {
 	if len(t.Lines) == 0 {
 		res = append(res, "No text")
 	} else {
@@ -83,7 +83,7 @@ type MenuItem struct {
 	cursor          int
 }
 
-func (t *MenuItem) Show() (res []string) {
+func (t *MenuItem) Show() (res []string, fixPart int) {
 	for i := t.offset; i < len(t.Items) && i < (t.offset+lcdHeight); i++ {
 		if i == t.cursor {
 			res = append(res, CharCursor+t.Items[i].Label)
@@ -94,6 +94,7 @@ func (t *MenuItem) Show() (res []string) {
 	for len(res) < lcdHeight {
 		res = append(res, "")
 	}
+	fixPart = 1
 	return
 }
 
@@ -161,7 +162,7 @@ type StatusScreen struct {
 	last           []string
 }
 
-func (s *StatusScreen) Show() (res []string) {
+func (s *StatusScreen) Show() (res []string, fixPart int) {
 	if s.lastMpdMessage == nil || !s.lastMpdMessage.Playing || len(s.last) == 0 {
 		log.Printf("lastMpdMessage = %s", s.lastMpdMessage.String())
 		n := time.Now()
@@ -255,7 +256,7 @@ func (u *UrgentMsgScreen) AddMsg(msg []string) {
 	log.Printf("AddMsg: %#v", u.messages)
 }
 
-func (u *UrgentMsgScreen) Show() (res []string) {
+func (u *UrgentMsgScreen) Show() (res []string, fixPart int) {
 	u.mu.Lock()
 	defer u.mu.Unlock()
 
@@ -312,7 +313,7 @@ func NewMPDPlaylistsScreen() *MPDPlaylistsScreen {
 	}
 }
 
-func (m *MPDPlaylistsScreen) Show() (res []string) {
+func (m *MPDPlaylistsScreen) Show() (res []string, fixPart int) {
 	if len(m.playlists) == 0 {
 		res = append(res, "No playlists")
 	} else {
@@ -323,6 +324,7 @@ func (m *MPDPlaylistsScreen) Show() (res []string) {
 				res = append(res, " "+m.playlists[i])
 			}
 		}
+		fixPart = 1
 	}
 	for len(res) < lcdHeight {
 		res = append(res, "")
@@ -360,18 +362,23 @@ func NewMPDCurrPlaylistScreen() *MPDCurrPlaylistScreen {
 	}
 }
 
-func (m *MPDCurrPlaylistScreen) Show() (res []string) {
+func (m *MPDCurrPlaylistScreen) Show() (res []string, fixPart int) {
 	if len(m.songs) == 0 {
 		res = append(res, "No playlists")
 	} else {
+		fixPart = 0
 		for i := m.offset; i < len(m.songs) && i < (m.offset+lcdHeight); i++ {
 			idx := strconv.Itoa(i+1) + ". "
+			if len(idx) > fixPart {
+				fixPart = len(idx)
+			}
 			if i == m.cursor {
 				res = append(res, CharCursor+idx+m.songs[i])
 			} else {
 				res = append(res, " "+idx+m.songs[i])
 			}
 		}
+		fixPart++
 	}
 	for len(res) < lcdHeight {
 		res = append(res, "")
@@ -382,13 +389,19 @@ func (m *MPDCurrPlaylistScreen) Show() (res []string) {
 func (m *MPDCurrPlaylistScreen) Action(action string) (result int, screen Screen) {
 	switch action {
 	case configuration.Keys.Menu.Up:
-		m.cursor, m.offset = cursorScrollUp(m.cursor, m.offset, len(m.songs))
+		if len(m.songs) > 0 {
+			m.cursor, m.offset = cursorScrollUp(m.cursor, m.offset, len(m.songs))
+		}
 		return ActionResultOk, nil
 	case configuration.Keys.Menu.Down:
-		m.cursor, m.offset = cursorScrollDown(m.cursor, m.offset, len(m.songs))
+		if len(m.songs) > 0 {
+			m.cursor, m.offset = cursorScrollDown(m.cursor, m.offset, len(m.songs))
+		}
 		return ActionResultOk, nil
 	case configuration.Keys.Menu.Select:
-		MPDPlay(m.cursor)
+		if len(m.songs) > 0 {
+			MPDPlay(m.cursor)
+		}
 		return ActionResultOk, nil
 	case configuration.Keys.Menu.Back:
 		return ActionResultBack, nil
