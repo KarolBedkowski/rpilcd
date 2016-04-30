@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/chbmuc/lirc"
-	"log"
+	"github.com/golang/glog"
 )
 
 type Lirc struct {
@@ -15,7 +15,7 @@ func NewLirc() *Lirc {
 		Events: make(chan string, 10),
 	}
 	if configuration.LircConf.PidFile == "" {
-		log.Printf("Lirc not configured")
+		glog.Error("Lirc not configured")
 		return l
 	}
 
@@ -38,7 +38,9 @@ func NewLirc() *Lirc {
 }
 
 func (l *Lirc) handler(event lirc.Event) {
-	log.Printf("lirc ir event: %#v", event)
+	if glog.V(1) {
+		glog.Infof("lirc ir event: %#v", event)
+	}
 	l.Events <- event.Button
 }
 

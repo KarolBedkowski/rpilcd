@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/fhs/gompd/mpd"
-	"log"
+	"github.com/golang/glog"
 	"strconv"
 	"strings"
 	"time"
@@ -12,7 +12,7 @@ import (
 func mpdConnect() *mpd.Client {
 	con, err := mpd.Dial("tcp", configuration.MPDConf.Host)
 	if err != nil {
-		log.Printf("mpdConnect error:%v", err.Error())
+		glog.Errorf("mpdConnect error:%v", err.Error())
 	}
 	return con
 }
@@ -52,12 +52,12 @@ func NewMPD() *MPD {
 func (m *MPD) watch() (err error) {
 	m.watcher, err = mpd.NewWatcher("tcp", configuration.MPDConf.Host, "")
 	if err != nil {
-		log.Printf("mpd.watch: connect to %v error: %v", configuration.MPDConf.Host, err.Error())
+		glog.Errorf("mpd.watch: connect to %v error: %v", configuration.MPDConf.Host, err.Error())
 		return err
 	}
-	log.Printf("mpd.watch: connected to %v", configuration.MPDConf.Host)
+	glog.Infof("mpd.watch: connected to %v", configuration.MPDConf.Host)
 
-	log.Println("mpd.watch: starting watch")
+	glog.V(1).Infof("mpd.watch: starting watch")
 
 	m.Message <- MPDGetStatus()
 
@@ -67,10 +67,10 @@ func (m *MPD) watch() (err error) {
 		}
 		select {
 		case _ = <-m.end:
-			log.Printf("mpd.watch: end")
+			glog.Infof("mpd.watch: end")
 			return
 		case subsystem := <-m.watcher.Event:
-			log.Printf("mpd.watch: event: %v", subsystem)
+			glog.Infof("mpd.watch: event: %v", subsystem)
 			switch subsystem {
 			case "player":
 				m.Message <- MPDGetStatus()
@@ -78,7 +78,7 @@ func (m *MPD) watch() (err error) {
 				m.Message <- MPDGetStatus()
 			}
 		case err := <-m.watcher.Error:
-			log.Printf("mpd.watch: error event: %v", err)
+			glog.Errorf("mpd.watch: error event: %v", err)
 			return err
 		}
 	}
@@ -91,7 +91,7 @@ func (m *MPD) Connect() (err error) {
 
 	go func() {
 		defer func() {
-			log.Println("mpd.watch: closing")
+			glog.Infof("mpd.watch: closing")
 			if m.watcher != nil {
 				m.watcher.Close()
 				m.watcher = nil
@@ -101,7 +101,7 @@ func (m *MPD) Connect() (err error) {
 
 		for m.active {
 			if err = m.watch(); err != nil {
-				log.Printf("mpd.Connect: start watch error: %v", err)
+				glog.Errorf("mpd.Connect: start watch error: %v", err)
 			}
 			time.Sleep(5 * time.Second)
 		}
@@ -111,7 +111,7 @@ func (m *MPD) Connect() (err error) {
 
 // Close MPD client
 func (m *MPD) Close() {
-	log.Printf("mpd.Close")
+	glog.Infof("mpd.Close")
 	m.active = false
 	if m.watcher != nil {
 		m.end <- true
@@ -130,13 +130,13 @@ func MPDGetStatus() (s *MPDStatus) {
 	if con == nil {
 		return
 	}
-	log.Printf("mpd.GetStatus: connected to %s", configuration.MPDConf.Host)
+	glog.Infof("mpd.GetStatus: connected to %s", configuration.MPDConf.Host)
 
 	defer con.Close()
 
 	status, err := con.Status()
 	if err != nil {
-		log.Printf("mpd.GetStatus: Status error: %v", err.Error())
+		glog.Errorf("mpd.GetStatus: Status error: %v", err.Error())
 		return
 	}
 
@@ -153,12 +153,12 @@ func MPDGetStatus() (s *MPDStatus) {
 
 	song, err := con.CurrentSong()
 	if err != nil {
-		log.Printf("mpd.GetStatus: CurrentSong error: %v", err.Error())
+		glog.Errorf("mpd.GetStatus: CurrentSong error: %v", err.Error())
 		return
 	}
 
-	//log.Printf("Status: %+v", status)
-	//log.Printf("Song: %+v", song)
+	//glog.Infof("Status: %+v", status)
+	//glog.Infof("Song: %+v", song)
 
 	var res []string
 
@@ -294,7 +294,7 @@ func MPDPlaylists() (pls []string) {
 				pls = append(pls, pl["playlist"])
 			}
 		} else {
-			log.Printf("MPD.Playlists list error: %s", err)
+			glog.Errorf("MPD.Playlists list error: %s", err)
 		}
 	}
 	return
@@ -324,7 +324,7 @@ func MPDCurrPlaylist() (pls []string) {
 				}
 			}
 		} else {
-			log.Printf("MPD.CurrPlaylist list error: %s", err)
+			glog.Errorf("MPD.CurrPlaylist list error: %s", err)
 		}
 	}
 	return

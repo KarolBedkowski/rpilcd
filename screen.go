@@ -2,8 +2,8 @@ package main
 
 import (
 	"bytes"
+	"github.com/golang/glog"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"strconv"
@@ -128,12 +128,12 @@ func (t *MenuItem) execute() (result int, screen Screen) {
 		if t.RunInBackground {
 			if process, err := os.StartProcess(t.Cmd, t.Args, &os.ProcAttr{}); err == nil {
 				if err = process.Release(); err != nil {
-					log.Printf("Start process error: err=%v", err)
+					glog.Errorf("Start process error: err=%v", err)
 				} else {
 					res = "<started>"
 				}
 			} else {
-				log.Printf("Start process error: err=%v", err)
+				glog.Errorf("Start process error: err=%v", err)
 				res = "Err: " + err.Error()
 			}
 		} else {
@@ -142,7 +142,7 @@ func (t *MenuItem) execute() (result int, screen Screen) {
 			if res == "" {
 				res = "<no output>"
 			}
-			log.Printf("Execute: err=%v, res=%v", err, res)
+			glog.Infof("Execute: err=%v, res=%v", err, res)
 		}
 		lines := strings.Split(res, "\n")
 		return ActionResultOk, &TextScreen{Lines: lines}
@@ -164,7 +164,9 @@ type StatusScreen struct {
 
 func (s *StatusScreen) Show() (res []string, fixPart int) {
 	if s.lastMpdMessage == nil || !s.lastMpdMessage.Playing || len(s.last) == 0 {
-		log.Printf("lastMpdMessage = %s", s.lastMpdMessage.String())
+		if glog.V(1) {
+			glog.Infof("lastMpdMessage = %s", s.lastMpdMessage.String())
+		}
 		n := time.Now()
 		res = append(res, loadAvg()+" "+mpdStatusToStr("stop"))
 		res = append(res, n.Format("01-02 15:04:05"))
@@ -230,7 +232,7 @@ func loadAvg() string {
 			return string(data[:i])
 		}
 	} else {
-		log.Printf("main.loadavg error: %v", err)
+		glog.Errorf("main.loadavg error: %v", err)
 	}
 	return ""
 }
@@ -253,7 +255,9 @@ func (u *UrgentMsgScreen) AddMsg(msg []string) {
 	defer u.mu.Unlock()
 
 	u.messages = append(u.messages, msg)
-	log.Printf("AddMsg: %#v", u.messages)
+	if glog.V(1) {
+		glog.Infof("AddMsg: %#v", u.messages)
+	}
 }
 
 func (u *UrgentMsgScreen) Show() (res []string, fixPart int) {

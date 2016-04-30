@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"log"
+	"github.com/golang/glog"
 	//_ "net/http/pprof"
 	"net/http"
 	"os"
@@ -30,19 +30,20 @@ type Display interface {
 func main() {
 
 	//go func() {
-	//log.Println(http.ListenAndServe(":6060", nil))
+	//glog.Println(http.ListenAndServe(":6060", nil))
 	//}()
-
-	log.Printf("RPI LCD ver %s starting...", AppVersion)
-
 	soutput := flag.Bool("console", false, "Print on console instead of lcd")
 	flag.Parse()
+
+	glog.Infof("RPI LCD ver %s starting...", AppVersion)
 
 	err := loadConfiguration()
 	if err != nil {
 		panic(err)
 	}
-	log.Printf("configuration: %#v", configuration)
+	if glog.V(1) {
+		glog.Infof("configuration: %#v", configuration)
+	}
 
 	ws := UMServer{
 		Addr: configuration.ServicesConf.TCPServerAddr,
@@ -61,16 +62,17 @@ func main() {
 	lirc := NewLirc()
 
 	defer func() {
-		if e := recover(); e != nil {
-			log.Printf("Recover: %v", e)
-		}
-		log.Printf("main.defer: closing disp")
-		scrMgr.Close()
-		log.Printf("main.defer: closing mpd")
-		mpd.Close()
+		//if e := recover(); e != nil {
+		//	glog.Infof("Recover: %v", e)
+		//}
+		glog.Infof("main.defer: closing lirc")
 		lirc.Close()
+		glog.Infof("main.defer: closing disp")
+		scrMgr.Close()
+		glog.Infof("main.defer: closing mpd")
+		mpd.Close()
 		time.Sleep(2 * time.Second)
-		log.Printf("main.defer: all closed")
+		glog.Infof("main.defer: all closed")
 	}()
 
 	mpd.Connect()
@@ -78,7 +80,7 @@ func main() {
 
 	time.Sleep(1 * time.Second)
 
-	log.Printf("main: entering loop")
+	glog.V(1).Infof("main: entering loop")
 
 	ticker := createTicker()
 
@@ -94,7 +96,7 @@ func main() {
 		case _ = <-sig:
 			return
 		case _ = <-sigHup:
-			log.Printf("Reloading configuration")
+			glog.Infof("Reloading configuration")
 			ticker.Stop()
 			err := loadConfiguration()
 			if err != nil {

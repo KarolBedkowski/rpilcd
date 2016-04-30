@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"github.com/golang/glog"
 	"strings"
 	"time"
 )
@@ -20,10 +20,10 @@ type ScreenMgr struct {
 func NewScreenMgr(console bool) *ScreenMgr {
 	d := &ScreenMgr{}
 	if console {
-		log.Printf("main: starting console")
+		glog.Infof("main: starting console")
 		d.disp = NewConsole()
 	} else {
-		log.Printf("main: starting lcd")
+		glog.Infof("main: starting lcd")
 		d.disp = NewLcd()
 	}
 
@@ -48,7 +48,7 @@ func (d *ScreenMgr) NewCommand(msg string) {
 	d.lastCmdTime = now
 
 	msg = strings.TrimSpace(msg)
-	log.Printf("NewCommand '%s'", msg)
+	glog.Infof("NewCommand '%s'", msg)
 
 	// globla commands
 	switch msg {
@@ -68,7 +68,9 @@ func (d *ScreenMgr) NewCommand(msg string) {
 	}
 
 	screen := d.currentScreen()
-	log.Printf("current screen: %#v", screen)
+	if glog.V(1) {
+		glog.Infof("current screen: %#v", screen)
+	}
 	res, nextScreen := screen.Action(msg)
 	switch res {
 	case ActionResultBack:

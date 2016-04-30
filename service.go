@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"github.com/golang/glog"
 	"net"
 )
 
@@ -17,21 +17,21 @@ func (s *UMServer) Start() {
 		s.Addr = ":8681"
 	}
 
-	log.Printf("UMServer.Start starting (%s)...", s.Addr)
+	glog.Infof("UMServer.Start starting (%s)...", s.Addr)
 
 	s.Message = make(chan string, 10)
 
 	go func() {
 		ln, err := net.Listen("tcp", s.Addr)
 		if err != nil {
-			log.Printf("UMServer.Start Listen error: %s", err.Error())
+			glog.Errorf("UMServer.Start Listen error: %s", err.Error())
 			return
 		}
 		defer ln.Close()
 		for {
 			conn, err := ln.Accept()
 			if err != nil {
-				log.Printf("UMServer.Start Error accepting: %s", err.Error())
+				glog.Errorf("UMServer.Start Error accepting: %s", err.Error())
 				return
 			}
 			buf := make([]byte, 1024)

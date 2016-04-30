@@ -3,10 +3,10 @@ package main
 // Hitachi HD44780U support library
 
 import (
+	"github.com/golang/glog"
 	"golang.org/x/text/transform"
 	"golang.org/x/text/unicode/norm"
 	"k.prv/go-hd44780"
-	"log"
 )
 
 func removeNlChars(str string) string {
@@ -36,12 +36,12 @@ func NewLcd() (l *Lcd) {
 
 	err := l.lcd.Open()
 	if err != nil {
-		log.Panic("Can't open lcd: %s", err.Error())
+		glog.Fatal("Can't open lcd: %s", err.Error())
 		return nil
 	}
 
 	if !l.lcd.Active() {
-		log.Panic("LCD interface is inactive!")
+		glog.Fatal("LCD interface is inactive!")
 		return nil
 	}
 
@@ -74,7 +74,7 @@ func (l *Lcd) Display(msg string) {
 
 // Close LCD
 func (l *Lcd) Close() {
-	log.Printf("Lcd.Close")
+	glog.Infof("Lcd.Close")
 	l.end <- true
 }
 
