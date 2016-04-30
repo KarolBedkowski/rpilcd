@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -364,10 +365,11 @@ func (m *MPDCurrPlaylistScreen) Show() (res []string) {
 		res = append(res, "No playlists")
 	} else {
 		for i := m.offset; i < len(m.songs) && i < (m.offset+lcdHeight); i++ {
+			idx := strconv.Itoa(i+1) + ". "
 			if i == m.cursor {
-				res = append(res, CharCursor+m.songs[i])
+				res = append(res, CharCursor+idx+m.songs[i])
 			} else {
-				res = append(res, " "+m.songs[i])
+				res = append(res, " "+idx+m.songs[i])
 			}
 		}
 	}
