@@ -9,6 +9,14 @@ import (
 	"time"
 )
 
+func mpdConnect() *mpd.Client {
+	con, err := mpd.Dial("tcp", configuration.MPDConf.Host)
+	if err != nil {
+		log.Printf("mpdConnect error:%v", err.Error())
+	}
+	return con
+}
+
 // MPDStatus of MPD daemon
 type MPDStatus struct {
 	CurrentSong string
@@ -118,9 +126,8 @@ func MPDGetStatus() (s *MPDStatus) {
 		CurrentSong: "",
 	}
 
-	con, err := mpd.Dial("tcp", configuration.MPDConf.Host)
-	if err != nil {
-		log.Printf("mpd.GetStatus: connect do %s error: %v", configuration.MPDConf.Host, err.Error())
+	con := mpdConnect()
+	if con == nil {
 		return
 	}
 	log.Printf("mpd.GetStatus: connected to %s", configuration.MPDConf.Host)
@@ -200,24 +207,24 @@ func MPDGetStatus() (s *MPDStatus) {
 }
 
 func MPDPlay(index int) {
-	con, err := mpd.Dial("tcp", configuration.MPDConf.Host)
-	if err == nil {
+	con := mpdConnect()
+	if con != nil {
 		defer con.Close()
 		con.Play(index)
 	}
 }
 
 func MPDStop() {
-	con, err := mpd.Dial("tcp", configuration.MPDConf.Host)
-	if err == nil {
+	con := mpdConnect()
+	if con != nil {
 		defer con.Close()
 		con.Stop()
 	}
 }
 
 func MPDPause() {
-	con, err := mpd.Dial("tcp", configuration.MPDConf.Host)
-	if err == nil {
+	con := mpdConnect()
+	if con != nil {
 		defer con.Close()
 		if stat, err := con.Status(); err == nil {
 			err = con.Pause(stat["state"] != "pause")
@@ -226,24 +233,24 @@ func MPDPause() {
 }
 
 func MPDNext() {
-	con, err := mpd.Dial("tcp", configuration.MPDConf.Host)
-	if err == nil {
+	con := mpdConnect()
+	if con != nil {
 		defer con.Close()
 		con.Next()
 	}
 }
 
 func MPDPrev() {
-	con, err := mpd.Dial("tcp", configuration.MPDConf.Host)
-	if err == nil {
+	con := mpdConnect()
+	if con != nil {
 		defer con.Close()
 		con.Previous()
 	}
 }
 
 func MPDVolUp() {
-	con, err := mpd.Dial("tcp", configuration.MPDConf.Host)
-	if err == nil {
+	con := mpdConnect()
+	if con != nil {
 		defer con.Close()
 		if stat, err := con.Status(); err == nil {
 			vol, err := strconv.Atoi(stat["volume"])
@@ -260,8 +267,8 @@ func MPDVolUp() {
 }
 
 func MPDVolDown() {
-	con, err := mpd.Dial("tcp", configuration.MPDConf.Host)
-	if err == nil {
+	con := mpdConnect()
+	if con != nil {
 		defer con.Close()
 		if stat, err := con.Status(); err == nil {
 			vol, err := strconv.Atoi(stat["volume"])
@@ -278,8 +285,8 @@ func MPDVolDown() {
 }
 
 func MPDPlaylists() (pls []string) {
-	con, err := mpd.Dial("tcp", configuration.MPDConf.Host)
-	if err == nil {
+	con := mpdConnect()
+	if con != nil {
 		defer con.Close()
 		playlists, err := con.ListPlaylists()
 		if err == nil {
@@ -289,27 +296,23 @@ func MPDPlaylists() (pls []string) {
 		} else {
 			log.Printf("MPD.Playlists list error: %s", err)
 		}
-	} else {
-		log.Printf("MPD.Playlists error: %s", err)
 	}
 	return
 }
 
 func MPDPlayPlaylist(playlist string) {
-	con, err := mpd.Dial("tcp", configuration.MPDConf.Host)
-	if err == nil {
+	con := mpdConnect()
+	if con != nil {
 		defer con.Close()
 		con.Clear()
 		con.PlaylistLoad(playlist, -1, -1)
 		con.Play(0)
-	} else {
-		log.Printf("MPD.PlayPlaylist error: %s", err)
 	}
 }
 
 func MPDCurrPlaylist() (pls []string) {
-	con, err := mpd.Dial("tcp", configuration.MPDConf.Host)
-	if err == nil {
+	con := mpdConnect()
+	if con != nil {
 		defer con.Close()
 		playlists, err := con.PlaylistInfo(-1, -1)
 		if err == nil {
@@ -323,8 +326,6 @@ func MPDCurrPlaylist() (pls []string) {
 		} else {
 			log.Printf("MPD.CurrPlaylist list error: %s", err)
 		}
-	} else {
-		log.Printf("MPD.CurrPlaylist error: %s", err)
 	}
 	return
 }
@@ -332,8 +333,8 @@ func MPDCurrPlaylist() (pls []string) {
 var preMuteVol = -1
 
 func MPDVolMute() {
-	con, err := mpd.Dial("tcp", configuration.MPDConf.Host)
-	if err == nil {
+	con := mpdConnect()
+	if con != nil {
 		defer con.Close()
 		if stat, err := con.Status(); err == nil {
 			vol, err := strconv.Atoi(stat["volume"])
