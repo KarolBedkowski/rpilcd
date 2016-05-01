@@ -131,7 +131,9 @@ func (t *MenuItem) execute() (result int, screen Screen) {
 				Env:   os.Environ(),
 				Files: []*os.File{os.Stdin, nil, os.Stderr},
 			}
-			if process, err := os.StartProcess(t.Cmd, t.Args, attr); err == nil {
+			args := []string{t.Cmd}
+			args = append(args, t.Args...)
+			if process, err := os.StartProcess(t.Cmd, args, attr); err == nil {
 				if err = process.Release(); err != nil {
 					glog.Errorf("Start process error: err=%v", err)
 				} else {
