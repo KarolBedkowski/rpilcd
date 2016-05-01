@@ -45,6 +45,11 @@ func (l *Lirc) handler(event lirc.Event) {
 }
 
 func (l *Lirc) Close() {
+	defer func() {
+		if e := recover(); e != nil {
+			glog.Infof("Recover: %v", e)
+		}
+	}()
 	if l.ir != nil {
 		l.ir.Close()
 	}
