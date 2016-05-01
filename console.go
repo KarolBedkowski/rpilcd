@@ -1,14 +1,14 @@
 package main
 
 import (
-	"log"
+	"github.com/golang/glog"
 	"strings"
 	"sync"
 	"time"
 )
 
 const (
-	consoleDelay = (eDelay*4 + ePulse*2) * lcdWidth
+	consoleDelay = (80 * time.Millisecond) // * 16 * 2
 )
 
 // Console simulate lcd without physical lcd
@@ -25,8 +25,8 @@ type Console struct {
 func NewConsole() (l *Console) {
 	l = &Console{
 		active: true,
-		msg:    make(chan string),
-		end:    make(chan bool),
+		msg:    make(chan string, 10),
+		end:    make(chan bool, 1),
 	}
 	go func() {
 		for {
@@ -50,7 +50,7 @@ func (l *Console) Display(msg string) {
 
 // Close console
 func (l *Console) Close() {
-	log.Printf("Console close")
+	glog.Infof("Console close")
 	if l.active {
 		l.end <- true
 	}
@@ -73,7 +73,11 @@ func (l *Console) display(text string) {
 	l.Lock()
 	defer l.Unlock()
 	for i, l := range strings.Split(text, "\n") {
-		log.Printf("SimpleDisplay: [%d] '%s'", i, l)
+		glog.Infof("SimpleDisplay: [%d] '%s'", i, l)
 		time.Sleep(consoleDelay)
 	}
+}
+
+func (l *Console) ToggleBacklight() {
+	glog.Infof("SimpleDisplay: toggle backlight")
 }

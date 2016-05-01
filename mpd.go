@@ -1,36 +1,40 @@
 package main
 
 import (
-	"flag"
 	"fmt"
-	"github.com/turbowookie/gompd/mpd"
-	"log"
+	"github.com/fhs/gompd/mpd"
+	"github.com/golang/glog"
 	"strconv"
 	"strings"
 	"time"
 )
 
-var (
-	mpdHost = flag.String("mpdHost", "pi:6600", "MPD address")
-)
+func mpdConnect() *mpd.Client {
+	con, err := mpd.Dial("tcp", configuration.MPDConf.Host)
+	if err != nil {
+		glog.Errorf("mpdConnect error:%v", err.Error())
+	}
+	return con
+}
 
-// Status of MPD daemon
-type Status struct {
+// MPDStatus of MPD daemon
+type MPDStatus struct {
 	CurrentSong string
 	Playing     bool
 	Status      string
 	Flags       string
 	Volume      string
+	Error       string
 }
 
-func (s *Status) String() string {
-	return fmt.Sprintf("Status[Playing=%v Status=%v Flags=%v Volume=%v CurrentSong='%v']",
+func (s *MPDStatus) String() string {
+	return fmt.Sprintf("MPDStatus[Playing=%v Status=%v Flags=%v Volume=%v CurrentSong='%v']",
 		s.Playing, s.Status, s.Flags, s.Volume, s.CurrentSong)
 }
 
 // MPD client
 type MPD struct {
-	Message chan *Status
+	Message chan *MPDStatus
 	watcher *mpd.Watcher
 	end     chan bool
 	active  bool
@@ -39,23 +43,23 @@ type MPD struct {
 // NewMPD create new MPD client
 func NewMPD() *MPD {
 	return &MPD{
-		Message: make(chan *Status),
-		end:     make(chan bool),
+		Message: make(chan *MPDStatus, 10),
+		end:     make(chan bool, 1),
 		active:  true,
 	}
 }
 
 func (m *MPD) watch() (err error) {
-	m.watcher, err = mpd.NewWatcher("tcp", *mpdHost, "")
+	m.watcher, err = mpd.NewWatcher("tcp", configuration.MPDConf.Host, "")
 	if err != nil {
-		log.Printf("mpd.watch: connect to %v error: %v", *mpdHost, err.Error())
+		glog.Errorf("mpd.watch: connect to %v error: %v", configuration.MPDConf.Host, err.Error())
 		return err
 	}
-	log.Printf("mpd.watch: connected to %v", *mpdHost)
+	glog.Infof("mpd.watch: connected to %v", configuration.MPDConf.Host)
 
-	log.Println("mpd.watch: starting watch")
+	glog.V(1).Infof("mpd.watch: starting watch")
 
-	m.Message <- m.GetStatus()
+	m.Message <- MPDGetStatus()
 
 	for {
 		if m.watcher == nil {
@@ -63,18 +67,18 @@ func (m *MPD) watch() (err error) {
 		}
 		select {
 		case _ = <-m.end:
-			log.Printf("mpd.watch: end")
+			glog.Infof("mpd.watch: end")
 			return
 		case subsystem := <-m.watcher.Event:
-			log.Printf("mpd.watch: event: %v", subsystem)
+			glog.Infof("mpd.watch: event: %v", subsystem)
 			switch subsystem {
 			case "player":
-				m.Message <- m.GetStatus()
+				m.Message <- MPDGetStatus()
 			default:
-				m.Message <- m.GetStatus()
+				m.Message <- MPDGetStatus()
 			}
 		case err := <-m.watcher.Error:
-			log.Printf("mpd.watch: error event: %v", err)
+			glog.Errorf("mpd.watch: error event: %v", err)
 			return err
 		}
 	}
@@ -87,7 +91,7 @@ func (m *MPD) Connect() (err error) {
 
 	go func() {
 		defer func() {
-			log.Println("mpd.watch: closing")
+			glog.Infof("mpd.watch: closing")
 			if m.watcher != nil {
 				m.watcher.Close()
 				m.watcher = nil
@@ -97,7 +101,7 @@ func (m *MPD) Connect() (err error) {
 
 		for m.active {
 			if err = m.watch(); err != nil {
-				log.Printf("mpd.Connect: start watch error: %v", err)
+				glog.Errorf("mpd.Connect: start watch error: %v", err)
 			}
 			time.Sleep(5 * time.Second)
 		}
@@ -107,55 +111,54 @@ func (m *MPD) Connect() (err error) {
 
 // Close MPD client
 func (m *MPD) Close() {
-	log.Printf("mpd.Close")
+	glog.Infof("mpd.Close")
 	m.active = false
 	if m.watcher != nil {
 		m.end <- true
 	}
 }
 
-func (m *MPD) GetStatus() (s *Status) {
-	s = &Status{
+// GetStatus connect to mpd and get current status
+func MPDGetStatus() (s *MPDStatus) {
+	s = &MPDStatus{
 		Playing:     false,
 		Flags:       "ERR",
 		CurrentSong: "",
 	}
 
-	con, err := mpd.Dial("tcp", *mpdHost)
-	if err != nil {
-		log.Printf("mpd.GetStatus: connect do %s error: %v", *mpdHost, err.Error())
+	con := mpdConnect()
+	if con == nil {
 		return
 	}
-	log.Printf("mpd.GetStatus: connected to %s", *mpdHost)
+	glog.Infof("mpd.GetStatus: connected to %s", configuration.MPDConf.Host)
 
 	defer con.Close()
 
 	status, err := con.Status()
 	if err != nil {
-		log.Printf("mpd.GetStatus: Status error: %v", err.Error())
+		glog.Errorf("mpd.GetStatus: Status error: %v", err.Error())
 		return
 	}
 
 	s.Status = status["state"]
+	s.Error = status["error"]
 	s.Playing = s.Status != "stop"
 	s.Volume = status["volume"]
-	s.Flags = ""
 
-	if status["repeat"] != "0" {
-		s.Flags += "R"
-	}
 	if status["random"] != "0" {
-		s.Flags += "S"
+		s.Flags = "S"
+	} else if status["repeat"] != "0" {
+		s.Flags = "R"
 	}
 
 	song, err := con.CurrentSong()
 	if err != nil {
-		log.Printf("mpd.GetStatus: CurrentSong error: %v", err.Error())
+		glog.Errorf("mpd.GetStatus: CurrentSong error: %v", err.Error())
 		return
 	}
 
-	//log.Printf("Status: %+v", status)
-	//log.Printf("Song: %+v", song)
+	//glog.Infof("Status: %+v", status)
+	//glog.Infof("Song: %+v", song)
 
 	var res []string
 
@@ -194,11 +197,162 @@ func (m *MPD) GetStatus() (s *Status) {
 	}
 
 	if !hasATN {
-		if a, ok := song["File"]; ok && a != "" {
+		if a, ok := song["file"]; ok && a != "" {
 			res = append(res, a)
 		}
 	}
 
 	s.CurrentSong = strings.Join(res, "; ")
 	return
+}
+
+func MPDPlay(index int) {
+	con := mpdConnect()
+	if con != nil {
+		defer con.Close()
+		con.Play(index)
+	}
+}
+
+func MPDStop() {
+	con := mpdConnect()
+	if con != nil {
+		defer con.Close()
+		con.Stop()
+	}
+}
+
+func MPDPause() {
+	con := mpdConnect()
+	if con != nil {
+		defer con.Close()
+		if stat, err := con.Status(); err == nil {
+			err = con.Pause(stat["state"] != "pause")
+		}
+	}
+}
+
+func MPDNext() {
+	con := mpdConnect()
+	if con != nil {
+		defer con.Close()
+		con.Next()
+	}
+}
+
+func MPDPrev() {
+	con := mpdConnect()
+	if con != nil {
+		defer con.Close()
+		con.Previous()
+	}
+}
+
+func MPDVolUp() {
+	con := mpdConnect()
+	if con != nil {
+		defer con.Close()
+		if stat, err := con.Status(); err == nil {
+			vol, err := strconv.Atoi(stat["volume"])
+			if err != nil {
+				return
+			}
+			vol += 5
+			if vol > 100 {
+				vol = 100
+			}
+			con.SetVolume(vol)
+		}
+	}
+}
+
+func MPDVolDown() {
+	con := mpdConnect()
+	if con != nil {
+		defer con.Close()
+		if stat, err := con.Status(); err == nil {
+			vol, err := strconv.Atoi(stat["volume"])
+			if err != nil {
+				return
+			}
+			vol -= 5
+			if vol < 0 {
+				vol = 0
+			}
+			con.SetVolume(vol)
+		}
+	}
+}
+
+func MPDPlaylists() (pls []string) {
+	con := mpdConnect()
+	if con != nil {
+		defer con.Close()
+		playlists, err := con.ListPlaylists()
+		if err == nil {
+			for _, pl := range playlists {
+				pls = append(pls, pl["playlist"])
+			}
+		} else {
+			glog.Errorf("MPD.Playlists list error: %s", err)
+		}
+	}
+	return
+}
+
+func MPDPlayPlaylist(playlist string) {
+	con := mpdConnect()
+	if con != nil {
+		defer con.Close()
+		con.Clear()
+		con.PlaylistLoad(playlist, -1, -1)
+		con.Play(0)
+	}
+}
+
+func MPDCurrPlaylist() (pls []string) {
+	con := mpdConnect()
+	if con != nil {
+		defer con.Close()
+		playlists, err := con.PlaylistInfo(-1, -1)
+		if err == nil {
+			for _, pl := range playlists {
+				if title, ok := pl["Title"]; ok {
+					pls = append(pls, title)
+				} else {
+					pls = append(pls, pl["file"])
+				}
+			}
+		} else {
+			glog.Errorf("MPD.CurrPlaylist list error: %s", err)
+		}
+	}
+	return
+}
+
+var preMuteVol = -1
+
+func MPDVolMute() {
+	con := mpdConnect()
+	if con != nil {
+		defer con.Close()
+		if stat, err := con.Status(); err == nil {
+			vol, err := strconv.Atoi(stat["volume"])
+			if err != nil {
+				return
+			}
+			if vol == 0 {
+				if preMuteVol > 0 {
+					vol = preMuteVol
+				} else {
+					vol = 100
+				}
+			} else {
+				preMuteVol = vol
+				vol = 0
+			}
+			con.SetVolume(vol)
+		}
+	}
+
 }

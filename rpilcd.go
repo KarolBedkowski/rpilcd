@@ -1,17 +1,21 @@
 package main
 
 import (
-	"bytes"
 	"flag"
-	"io/ioutil"
-	"log"
-	"net"
+	"github.com/golang/glog"
 	//_ "net/http/pprof"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
+
+const lcdWidth = 16
+const lcdHeight = 2
+const minMpdActInterval = time.Duration(100) * time.Millisecond
 
 // AppVersion global var
 var AppVersion = "dev"
@@ -20,150 +24,99 @@ var AppVersion = "dev"
 type Display interface {
 	Display(string)
 	Close()
+	ToggleBacklight()
 }
 
 func main() {
 
 	//go func() {
-	//log.Println(http.ListenAndServe(":6060", nil))
+	//glog.Println(http.ListenAndServe(":6060", nil))
 	//}()
-
-	log.Printf("RPI LCD ver %s starting...", AppVersion)
-
 	soutput := flag.Bool("console", false, "Print on console instead of lcd")
-	refreshInt := flag.Int64("interval", 1000, "Interval between lcd updates in ms")
-	startWS := flag.Bool("start_ws", true, "Start WS for external content")
-	wsAddr := flag.String("ws_addr", "localhost:8681", "Webservice address")
-
 	flag.Parse()
 
-	ws := WSServer{
-		Addr: *wsAddr,
+	glog.Infof("RPI LCD ver %s starting...", AppVersion)
+
+	err := loadConfiguration()
+	if err != nil {
+		panic(err)
+	}
+	if glog.V(1) {
+		glog.Infof("configuration: %#v", configuration)
 	}
 
-	if *startWS {
+	ws := UMServer{
+		Addr: configuration.ServicesConf.TCPServerAddr,
+	}
+	if configuration.ServicesConf.TCPServerAddr != "" {
 		ws.Start()
 	}
 
-	log.Printf("main: interval: %d ms", *refreshInt)
+	mpd := NewMPD()
+	scrMgr := NewScreenMgr(*soutput)
+	lirc := NewLirc()
 
-	var disp Display
-	if *soutput {
-		log.Printf("main: starting console")
-		disp = NewConsole()
-	} else {
-		log.Printf("main: starting lcd")
-		disp = NewLcd()
+	if configuration.ServicesConf.HTTPServerAddr != "" {
+		http.Handle("/metrics", prometheus.Handler())
+		http.HandleFunc("/", scrMgr.WebHandler)
+		glog.Infof("webserver starting (%s)...", configuration.ServicesConf.HTTPServerAddr)
+		go http.ListenAndServe(configuration.ServicesConf.HTTPServerAddr, nil)
 	}
 
-	disp.Display(" \n ")
-	mpd := NewMPD()
-
 	defer func() {
-		if e := recover(); e != nil {
-			log.Printf("Recover: %v", e)
-		}
-		log.Printf("main.defer: closing disp")
-		disp.Close()
-		log.Printf("main.defer: closing mpd")
+		//if e := recover(); e != nil {
+		//	glog.Infof("Recover: %v", e)
+		//}
+		glog.Infof("main.defer: closing lirc")
+		lirc.Close()
+		glog.Infof("main.defer: closing disp")
+		scrMgr.Close()
+		glog.Infof("main.defer: closing mpd")
 		mpd.Close()
 		time.Sleep(2 * time.Second)
-		log.Printf("main.defer: all closed")
+		glog.Infof("main.defer: all closed")
 	}()
 
 	mpd.Connect()
+	scrMgr.UpdateMpdStatus(MPDGetStatus())
 
 	time.Sleep(1 * time.Second)
 
-	log.Printf("main: entering loop")
+	glog.V(1).Infof("main: entering loop")
 
-	ts := NewTextScroller(lcdWidth)
-	pt := NewPrioText(lcdWidth)
-	pt.PrioMsgTime = 5000 / int(*refreshInt)
-	ticker := time.NewTicker(time.Duration(*refreshInt) * time.Millisecond)
+	ticker := createTicker()
 
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt, os.Kill)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
-	lastMpdMessage := mpd.GetStatus()
+
+	sigHup := make(chan os.Signal, 1)
+	signal.Notify(sig, syscall.SIGHUP)
+
 	for {
 		select {
 		case _ = <-sig:
 			return
-		case msg := <-ws.Message:
-			pt.Add(msg)
-		case msg := <-mpd.Message:
-			lastMpdMessage = msg
-			ts.Set(formatData(lastMpdMessage))
-		case <-ticker.C:
-			text, ok := pt.Get()
-			if !ok {
-				if lastMpdMessage == nil || !lastMpdMessage.Playing {
-					log.Printf("lastMpdMessage = %s", lastMpdMessage.String())
-					n := time.Now()
-					ts.Set(loadAvg() + " | stop\n " + n.Format("01-02 15:04:05"))
-				}
-				text = ts.Tick()
-			}
-			disp.Display(text)
-		}
-	}
-}
-
-func formatData(s *Status) string {
-	if s != nil && s.Playing {
-		if s.Status == "play" {
-			return loadAvg() + " | " + s.Flags + s.Volume + "\n" + removeNlChars(s.CurrentSong)
-		}
-		return loadAvg() + " | " + s.Status + " " + s.Volume + "\n" + removeNlChars(s.CurrentSong)
-	}
-
-	n := time.Now()
-	return loadAvg() + " | stop\n " + n.Format("01-02 15:04:05")
-}
-
-func loadAvg() string {
-	if data, err := ioutil.ReadFile("/proc/loadavg"); err == nil {
-		i := bytes.IndexRune(data, ' ')
-		if i > 0 {
-			return string(data[:i])
-		}
-	} else {
-		log.Printf("main.loadavg error: %v", err)
-	}
-	return ""
-}
-
-type WSServer struct {
-	Addr    string
-	Message chan string
-}
-
-func (s *WSServer) Start() {
-	if s.Addr == "" {
-		s.Addr = ":8681"
-	}
-
-	s.Message = make(chan string)
-
-	go func() {
-		ln, err := net.Listen("tcp", s.Addr)
-		if err != nil {
-			log.Printf("WSServer.Start Listen error: %s", err.Error())
-			return
-		}
-		defer ln.Close()
-		for {
-			conn, err := ln.Accept()
+		case _ = <-sigHup:
+			glog.Infof("Reloading configuration")
+			ticker.Stop()
+			err := loadConfiguration()
 			if err != nil {
-				log.Printf("WSServer.Start Error accepting: %s", err.Error())
-				return
+				panic(err)
 			}
-			buf := make([]byte, 1024)
-			if reqLen, err := conn.Read(buf); err == nil || reqLen > 0 {
-				s.Message <- string(buf[:reqLen])
-			}
-			conn.Close()
+			ticker = createTicker()
+		case ev := <-lirc.Events:
+			scrMgr.NewCommand(ev)
+		case msg := <-ws.Message:
+			scrMgr.NewCommand(msg)
+		case msg := <-mpd.Message:
+			scrMgr.UpdateMpdStatus(msg)
+		case <-ticker.C:
+			scrMgr.Tick()
 		}
-	}()
+	}
+}
+
+func createTicker() *time.Ticker {
+	return time.NewTicker(time.Duration(configuration.DisplayConf.RefreshInterval) * time.Millisecond)
 }

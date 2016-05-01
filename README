@@ -34,6 +34,27 @@ With gpio (on RPI) - require sudo.
 Options
 -------
  * `-mpdHost=pi:6600` - address:port mpd daemon
+ * `-console`' - display messages on console instead of lcd
+ * `-startService=true` - start local tcp server for urgent messages
+ * `-serviceAddr=localhost:8681` - local tcp server address
+
+Urgent messages
+---------------
+Send text or json-structure to localhost:8681 (or other configured by
+--ws_addr param) some text; ie:
+::
+
+     echo 'test' | nc localhost 8681
+
+
+JSON structure:
+::
+
+   {
+      "Text": "some tekst to display",
+      "Timeout": 5,
+      "PutOnTop": true
+   }
 
 
 .. vim: ft=rst tw=72

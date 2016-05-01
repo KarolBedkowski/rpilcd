@@ -1,0 +1,103 @@
+[menu]
+
+	label = "main"
+
+	[[menu.items]]
+		label = "mpd"
+
+		[[menu.items.items]]
+		label = "playlist"
+		cmd = "playlist"
+		kind = "mpd"
+
+		[[menu.items.items]]
+		label = "playlists"
+		cmd = "playlists"
+		kind = "mpd"
+			
+		[[menu.items.items]]
+		label = "mpd restart"
+		cmd = "service"
+		args = ["mpd", "restart"]
+		kind = "cmd"
+
+	[[menu.items]]
+		label = "pogoda"
+
+		[[menu.items.items]]
+		label = "curr"
+		cmd = "get_weather.sh"
+		kind = "cmd"
+
+		[[menu.items.items]]
+		label = "pred"
+		cmd = "temp-pred"
+		kind = "cmd"
+	
+	[[menu.items]]
+		label = "info"
+
+		[[menu.items.items]]
+		label = "ifconfig"
+		cmd = "get_ifaceaddr.sh"
+		kind = "cmd"
+	
+	[[menu.items]]
+		label = "power"
+
+		[[menu.items.items]]
+		label = "shutdown"
+		cmd = "shutdown"
+		args = ["-h", "0"]
+		kind = "cmd"
+		run_in_background = true
+		
+		[[menu.items.items]]
+		label = "reboot"
+		cmd = "shutdown"
+		args = ["-r", "0"]
+		kind = "cmd"
+		run_in_background = true
+	
+	[[menu.items]]
+		label = "other"
+
+		[[menu.items.items]]
+		label = "restart rpilcd"
+		cmd = "service"
+		args = ["rpilcd", "restart"]
+		kind = "cmd"
+		
+[keys]
+	toggle_lcd = "KEY_MODE"
+
+	[keys.menu]
+	show = "KEY_OPTION"
+	back = "KEY_BACK"
+	up = "KEY_VOLUMEUP"
+	down = "KEY_VOLUMEDOWN"
+	select = "KEY_PLAY"
+
+	[keys.mpd]
+	play = "KEY_PLAY"
+	stop = "KEY_STOP"
+	pause = "KEY_PAUSE"
+	next = "KEY_NEXT"
+	prev = "KEY_PREVIOUS"
+	vol_up = "KEY_VOLUMEUP"
+	vol_down = "KEY_VOLUMEDOWN"
+	vol_mute = "KEY_MUTE"
+
+[mpd]
+host = "pi:6600"
+
+[display]
+refresh_interval = 1000
+
+[services]
+http_server_addr = ":8001"
+tcp_server_addr = "localhost:8681"
+
+[lirc]
+pid_file = "/var/run/lirc/lircd"
+remote = "*"
