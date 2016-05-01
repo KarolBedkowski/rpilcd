@@ -52,14 +52,16 @@ func main() {
 		ws.Start()
 	}
 
-	if configuration.ServicesConf.HTTPServerAddr != "" {
-		http.Handle("/metrics", prometheus.Handler())
-		go http.ListenAndServe(configuration.ServicesConf.HTTPServerAddr, nil)
-	}
-
 	mpd := NewMPD()
 	scrMgr := NewScreenMgr(*soutput)
 	lirc := NewLirc()
+
+	if configuration.ServicesConf.HTTPServerAddr != "" {
+		http.Handle("/metrics", prometheus.Handler())
+		http.HandleFunc("/", scrMgr.WebHandler)
+		glog.Infof("webserver starting (%s)...", configuration.ServicesConf.HTTPServerAddr)
+		go http.ListenAndServe(configuration.ServicesConf.HTTPServerAddr, nil)
+	}
 
 	defer func() {
 		//if e := recover(); e != nil {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/golang/glog"
+	"net/http"
 	"strings"
 	"time"
 )
@@ -15,6 +16,7 @@ type ScreenMgr struct {
 	statusScr   *StatusScreen
 	screens     []Screen
 	lastCmdTime time.Time
+	lastContent string
 }
 
 func NewScreenMgr(console bool) *ScreenMgr {
@@ -108,6 +110,7 @@ func (d *ScreenMgr) display() {
 	screen := d.currentScreen()
 	lines, fixPart := screen.Show()
 	text := strings.Join(lines, "\n")
+	d.lastContent = text
 	d.ts.Set(text, fixPart)
 	d.disp.Display(d.ts.Tick())
 }
@@ -122,4 +125,9 @@ func (d *ScreenMgr) AddUrgentMsg(msg string) {
 
 func (d *ScreenMgr) Tick() {
 	d.display()
+}
+
+func (d *ScreenMgr) WebHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.Write([]byte(d.lastContent))
 }
