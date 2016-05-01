@@ -33,7 +33,8 @@ func (tsl *textScrollerLine) set(inp string, width int, fixPart int) {
 	}
 }
 
-func (tsl *textScrollerLine) scroll() string {
+func (tsl *textScrollerLine) getAndScroll() string {
+	res := tsl.line
 	if tsl.needScroll {
 		if tsl.fixPart > 0 {
 			tsl.line = tsl.line[:tsl.fixPart] + tsl.line[tsl.fixPart+1:] + string(tsl.line[tsl.fixPart])
@@ -41,7 +42,7 @@ func (tsl *textScrollerLine) scroll() string {
 			tsl.line = tsl.line[1:] + string(tsl.line[0])
 		}
 	}
-	return tsl.line
+	return res
 }
 
 // TextScroller format some text to display in few character display
@@ -83,7 +84,7 @@ func (t *TextScroller) Tick() (res string) {
 	defer t.mu.Unlock()
 
 	for _, l := range t.lines {
-		res += l.scroll()[:t.Width] + "\n"
+		res += l.getAndScroll()[:t.Width] + "\n"
 	}
 
 	return strings.TrimRight(res, "\n")
