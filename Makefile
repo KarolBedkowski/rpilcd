@@ -15,7 +15,7 @@ build_pi:
 	#CGO_ENABLED="0" GOGCCFLAGS="-g -fPIC -march=native -s" GOARCH=arm GOARM=5 go build -o rpilcd -ldflags $(LDFLAGS)
 
 run: 
-	go run *.go -console=true
+	go run *.go -console=true -alsologtostderr
 
 clean:
 	go clean
