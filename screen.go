@@ -126,7 +126,12 @@ func (t *MenuItem) execute() (result int, screen Screen) {
 	case "cmd":
 		var res string
 		if t.RunInBackground {
-			if process, err := os.StartProcess(t.Cmd, t.Args, &os.ProcAttr{}); err == nil {
+			attr := &os.ProcAttr{
+				Dir:   ".",
+				Env:   os.Environ(),
+				Files: []*os.File{os.Stdin, nil, os.Stderr},
+			}
+			if process, err := os.StartProcess(t.Cmd, t.Args, attr); err == nil {
 				if err = process.Release(); err != nil {
 					glog.Errorf("Start process error: err=%v", err)
 				} else {
@@ -139,10 +144,10 @@ func (t *MenuItem) execute() (result int, screen Screen) {
 		} else {
 			out, err := exec.Command(t.Cmd, t.Args...).CombinedOutput()
 			res := strings.TrimSpace(string(out))
-			if res == "" {
-				res = "<no output>"
-			}
 			glog.Infof("Execute: err=%v, res=%v", err, res)
+		}
+		if res == "" {
+			res = "<no output>"
 		}
 		lines := strings.Split(res, "\n")
 		return ActionResultOk, &TextScreen{Lines: lines}
