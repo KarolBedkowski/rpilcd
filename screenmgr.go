@@ -108,6 +108,12 @@ func (d *ScreenMgr) currentScreen() Screen {
 
 func (d *ScreenMgr) display() {
 	screen := d.currentScreen()
+	if !screen.Valid() {
+		if len(d.screens) > 0 {
+			d.screens = d.screens[:len(d.screens)-1]
+		}
+		screen = d.currentScreen()
+	}
 	lines, fixPart := screen.Show()
 	text := strings.Join(lines, "\n")
 	d.lastContent = text

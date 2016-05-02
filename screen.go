@@ -33,11 +33,14 @@ type Screen interface {
 	Show() (res []string, fixPart int)
 	// Action perform some action on screen
 	Action(action string) (result int, screen Screen)
+	// Valid return true when Screen should be show, otherwise - back
+	Valid() bool
 }
 
 type TextScreen struct {
-	Lines  []string
-	offset int
+	Lines   []string
+	offset  int
+	Timeout int
 }
 
 func (t *TextScreen) Show() (res []string, fixPart int) {
@@ -70,6 +73,18 @@ func (t *TextScreen) Action(action string) (result int, screen Screen) {
 		return ActionResultBack, nil
 	}
 	return
+}
+
+func (t *TextScreen) Valid() bool {
+	if t.Timeout < 0 {
+		return true
+	}
+	if t.Timeout == 0 {
+		return false
+	}
+	t.Timeout--
+	return true
+
 }
 
 type MenuItem struct {
@@ -164,6 +179,10 @@ func (t *MenuItem) execute() (result int, screen Screen) {
 	return ActionResultNop, nil
 }
 
+func (t *MenuItem) Valid() bool {
+	return true
+}
+
 type StatusScreen struct {
 	lastMpdMessage *MPDStatus
 	last           []string
@@ -187,22 +206,50 @@ func (s *StatusScreen) Action(action string) (result int, screen Screen) {
 	switch action {
 	case configuration.Keys.MPD.Play:
 		MPDPlay(-1)
+		return ActionResultOk, &TextScreen{
+			Lines:   []string{"play", ""},
+			Timeout: 1,
+		}
 	case configuration.Keys.MPD.Stop:
 		MPDStop()
+		return ActionResultOk, &TextScreen{
+			Lines:   []string{"stop", ""},
+			Timeout: 1,
+		}
 	case configuration.Keys.MPD.Pause:
 		MPDPause()
+		return ActionResultOk, &TextScreen{
+			Lines:   []string{"pause", ""},
+			Timeout: 1,
+		}
 	case configuration.Keys.MPD.Next:
 		MPDNext()
+		return ActionResultOk, &TextScreen{
+			Lines:   []string{"next", ""},
+			Timeout: 1,
+		}
 	case configuration.Keys.MPD.Prev:
 		MPDPrev()
+		return ActionResultOk, &TextScreen{
+			Lines:   []string{"prevoius", ""},
+			Timeout: 1,
+		}
 	case configuration.Keys.MPD.VolUp:
 		MPDVolUp()
 	case configuration.Keys.MPD.VolDown:
 		MPDVolDown()
 	case configuration.Keys.MPD.VolMute:
 		MPDVolMute()
+		return ActionResultOk, &TextScreen{
+			Lines:   []string{"mute", ""},
+			Timeout: 1,
+		}
 	}
 	return ActionResultOk, nil
+}
+
+func (s *StatusScreen) Valid() bool {
+	return true
 }
 
 func (s *StatusScreen) MpdUpdate(st *MPDStatus) {
@@ -312,6 +359,10 @@ func (u *UrgentMsgScreen) Action(action string) (result int, screen Screen) {
 	return ActionResultNop, nil
 }
 
+func (u *UrgentMsgScreen) Valid() bool {
+	return true
+}
+
 type MPDPlaylistsScreen struct {
 	offset    int
 	cursor    int
@@ -341,6 +392,10 @@ func (m *MPDPlaylistsScreen) Show() (res []string, fixPart int) {
 		res = append(res, "")
 	}
 	return
+}
+
+func (m *MPDPlaylistsScreen) Valid() bool {
+	return true
 }
 
 func (m *MPDPlaylistsScreen) Action(action string) (result int, screen Screen) {
@@ -418,6 +473,10 @@ func (m *MPDCurrPlaylistScreen) Action(action string) (result int, screen Screen
 		return ActionResultBack, nil
 	}
 	return
+}
+
+func (m *MPDCurrPlaylistScreen) Valid() bool {
+	return true
 }
 
 func cursorScrollUp(cursor, offset, items int) (rcursor, roffset int) {
