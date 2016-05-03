@@ -89,3 +89,15 @@ func (t *TextScroller) Tick() (res string) {
 
 	return strings.TrimRight(res, "\n")
 }
+
+// Get current strings
+func (t *TextScroller) Get() (res string) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	for _, l := range t.lines {
+		res += l.line[:t.Width] + "\n"
+	}
+
+	return strings.TrimRight(res, "\n")
+}

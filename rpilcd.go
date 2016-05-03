@@ -79,6 +79,7 @@ func main() {
 
 	mpd.Connect()
 	scrMgr.UpdateMpdStatus(MPDGetStatus())
+	scrMgr.display(false)
 
 	time.Sleep(1 * time.Second)
 

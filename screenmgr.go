@@ -58,11 +58,10 @@ func (d *ScreenMgr) NewCommand(msg string) {
 	case configuration.Keys.Menu.Show:
 		if len(d.screens) > 0 {
 			d.screens = nil
-			d.display()
-			return
+		} else {
+			d.screens = append(d.screens, configuration.Menu)
 		}
-		d.screens = append(d.screens, configuration.Menu)
-		d.display()
+		d.display(false)
 		return
 	case configuration.Keys.ToggleLCD:
 		d.disp.ToggleBacklight()
@@ -79,17 +78,17 @@ func (d *ScreenMgr) NewCommand(msg string) {
 		if len(d.screens) > 0 {
 			d.screens = d.screens[:len(d.screens)-1]
 		}
-		d.display()
+		d.display(false)
 		return
 	case ActionResultExit:
 		d.screens = nil
-		d.display()
+		d.display(false)
 		return
 	case ActionResultOk:
 		if nextScreen != nil {
 			d.screens = append(d.screens, nextScreen)
 		}
-		d.display()
+		d.display(false)
 		return
 	}
 	d.AddUrgentMsg(msg)
@@ -106,7 +105,7 @@ func (d *ScreenMgr) currentScreen() Screen {
 
 }
 
-func (d *ScreenMgr) display() {
+func (d *ScreenMgr) display(tick bool) {
 	screen := d.currentScreen()
 	if !screen.Valid() {
 		if len(d.screens) > 0 {
@@ -118,7 +117,11 @@ func (d *ScreenMgr) display() {
 	text := strings.Join(lines, "\n")
 	d.lastContent = text
 	d.ts.Set(text, fixPart)
-	d.disp.Display(d.ts.Tick())
+	if tick {
+		d.disp.Display(d.ts.Tick())
+	} else {
+		d.disp.Display(d.ts.Get())
+	}
 }
 
 func (d *ScreenMgr) UpdateMpdStatus(status *MPDStatus) {
@@ -130,7 +133,7 @@ func (d *ScreenMgr) AddUrgentMsg(msg string) {
 }
 
 func (d *ScreenMgr) Tick() {
-	d.display()
+	d.display(true)
 }
 
 func (d *ScreenMgr) WebHandler(w http.ResponseWriter, r *http.Request) {
