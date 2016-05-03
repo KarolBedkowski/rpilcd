@@ -93,6 +93,7 @@ host = "pi:6600"
 
 [display]
 refresh_interval = 1000
+i2c_addr = 63  # 0x3f
 
 [services]
 http_server_addr = ":8001"

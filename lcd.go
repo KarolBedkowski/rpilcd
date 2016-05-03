@@ -23,7 +23,7 @@ type Lcd struct {
 	msg chan string
 	end chan bool
 
-	lcd *hd44780.I2C4bit
+	lcd hd44780.HD44780
 }
 
 // NewLcd create and init new lcd output
@@ -31,7 +31,11 @@ func NewLcd() (l *Lcd) {
 	l = &Lcd{
 		msg: make(chan string, 10),
 		end: make(chan bool, 1),
-		lcd: hd44780.NewI2C4bit(0x3f),
+	}
+	if configuration.DisplayConf.I2CAddr > 0 {
+		l.lcd = hd44780.NewI2C4bit(configuration.DisplayConf.I2CAddr)
+	} else {
+		l.lcd = hd44780.NewGPIO4bit()
 	}
 
 	err := l.lcd.Open()

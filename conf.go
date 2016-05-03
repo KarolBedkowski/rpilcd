@@ -38,6 +38,7 @@ type (
 
 	DisplayConf struct {
 		RefreshInterval int
+		I2CAddr         byte `toml:"i2c_addr"`
 	}
 
 	ServicesConf struct {
