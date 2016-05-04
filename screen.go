@@ -281,9 +281,9 @@ func (s *StatusScreen) MpdUpdate(st *MPDStatus) {
 
 func loadAvg() string {
 	if data, err := ioutil.ReadFile("/proc/loadavg"); err == nil {
-		i := bytes.IndexRune(data, ' ')
+		i := bytes.IndexRune(data, '.')
 		if i > 0 {
-			return string(data[:i])
+			return string(data[:i+2])
 		}
 	} else {
 		glog.Errorf("main.loadavg error: %v", err)
