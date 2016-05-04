@@ -208,31 +208,31 @@ func (s *StatusScreen) Action(action string) (result int, screen Screen) {
 		MPDPlay(-1)
 		return ActionResultOk, &TextScreen{
 			Lines:   []string{"play", ""},
-			Timeout: 1,
+			Timeout: 2,
 		}
 	case configuration.Keys.MPD.Stop:
 		MPDStop()
 		return ActionResultOk, &TextScreen{
 			Lines:   []string{"stop", ""},
-			Timeout: 1,
+			Timeout: 2,
 		}
 	case configuration.Keys.MPD.Pause:
 		MPDPause()
 		return ActionResultOk, &TextScreen{
 			Lines:   []string{"pause", ""},
-			Timeout: 1,
+			Timeout: 2,
 		}
 	case configuration.Keys.MPD.Next:
 		MPDNext()
 		return ActionResultOk, &TextScreen{
 			Lines:   []string{"next", ""},
-			Timeout: 1,
+			Timeout: 2,
 		}
 	case configuration.Keys.MPD.Prev:
 		MPDPrev()
 		return ActionResultOk, &TextScreen{
-			Lines:   []string{"prevoius", ""},
-			Timeout: 1,
+			Lines:   []string{"previous", ""},
+			Timeout: 2,
 		}
 	case configuration.Keys.MPD.VolUp:
 		MPDVolUp()
@@ -242,7 +242,7 @@ func (s *StatusScreen) Action(action string) (result int, screen Screen) {
 		MPDVolMute()
 		return ActionResultOk, &TextScreen{
 			Lines:   []string{"mute", ""},
-			Timeout: 1,
+			Timeout: 2,
 		}
 	}
 	return ActionResultOk, nil
