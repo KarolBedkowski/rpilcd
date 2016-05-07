@@ -38,8 +38,9 @@ type Screen interface {
 }
 
 type TextScreen struct {
-	Lines   []string
-	offset  int
+	Lines  []string
+	offset int
+	// Timout: 0-no timeout; >0 - sec left
 	Timeout int
 }
 
@@ -76,10 +77,10 @@ func (t *TextScreen) Action(action string) (result int, screen Screen) {
 }
 
 func (t *TextScreen) Valid() bool {
-	if t.Timeout < 0 {
+	if t.Timeout < 1 {
 		return true
 	}
-	if t.Timeout == 0 {
+	if t.Timeout == 1 {
 		return false
 	}
 	t.Timeout--
