@@ -424,8 +424,11 @@ type MPDCurrPlaylistScreen struct {
 }
 
 func NewMPDCurrPlaylistScreen() *MPDCurrPlaylistScreen {
+	pls, pos := MPDCurrPlaylist()
 	return &MPDCurrPlaylistScreen{
-		songs: MPDCurrPlaylist(),
+		songs:  pls,
+		cursor: pos,
+		offset: pos,
 	}
 }
 

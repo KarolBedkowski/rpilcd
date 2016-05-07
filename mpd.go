@@ -310,7 +310,7 @@ func MPDPlayPlaylist(playlist string) {
 	}
 }
 
-func MPDCurrPlaylist() (pls []string) {
+func MPDCurrPlaylist() (pls []string, pos int) {
 	con := mpdConnect()
 	if con != nil {
 		defer con.Close()
@@ -325,6 +325,9 @@ func MPDCurrPlaylist() (pls []string) {
 			}
 		} else {
 			glog.Errorf("MPD.CurrPlaylist list error: %s", err)
+		}
+		if stat, err := con.Status(); err == nil {
+			pos, _ = strconv.Atoi(stat["song"])
 		}
 	}
 	return
