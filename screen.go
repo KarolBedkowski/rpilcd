@@ -161,7 +161,7 @@ func (t *MenuItem) execute() (result int, screen Screen) {
 			}
 		} else {
 			out, err := exec.Command(t.Cmd, t.Args...).CombinedOutput()
-			res := strings.TrimSpace(string(out))
+			res = strings.TrimSpace(string(out))
 			glog.Infof("Execute: err=%v, res=%v", err, res)
 		}
 		if res == "" {
