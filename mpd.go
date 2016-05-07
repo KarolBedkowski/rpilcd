@@ -111,7 +111,7 @@ func (m *MPD) Connect() (err error) {
 
 // Close MPD client
 func (m *MPD) Close() {
-	glog.Infof("mpd.Close")
+	glog.V(1).Info("mpd.Close")
 	m.active = false
 	if m.watcher != nil {
 		m.end <- true
@@ -130,7 +130,9 @@ func MPDGetStatus() (s *MPDStatus) {
 	if con == nil {
 		return
 	}
-	glog.Infof("mpd.GetStatus: connected to %s", configuration.MPDConf.Host)
+	if glog.V(1) {
+		glog.Infof("mpd.GetStatus: connected to %s", configuration.MPDConf.Host)
+	}
 
 	defer con.Close()
 
