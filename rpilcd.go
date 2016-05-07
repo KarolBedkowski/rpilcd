@@ -10,6 +10,8 @@ import (
 	"syscall"
 	"time"
 
+	//"github.com/coreos/go-systemd/daemon"
+	"github.com/Merovius/systemd"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -28,6 +30,10 @@ type Display interface {
 }
 
 func main() {
+	//daemon.SdNotify("STATUS=starting")
+	systemd.NotifyStatus("starting")
+
+	systemd.AutoWatchdog()
 
 	//go func() {
 	//glog.Println(http.ListenAndServe(":6060", nil))
@@ -67,6 +73,8 @@ func main() {
 		//if e := recover(); e != nil {
 		//	glog.Infof("Recover: %v", e)
 		//}
+		//daemon.SdNotify("STOPPING=1")
+		systemd.Notify("STOPPING=1\r\nSTATUS=stopping")
 		glog.Infof("main.defer: closing lirc")
 		lirc.Close()
 		glog.Infof("main.defer: closing disp")
@@ -75,6 +83,8 @@ func main() {
 		mpd.Close()
 		time.Sleep(2 * time.Second)
 		glog.Infof("main.defer: all closed")
+		//daemon.SdNotify("STATUS=stopped")
+		systemd.NotifyStatus("stopped")
 	}()
 
 	mpd.Connect()
@@ -93,6 +103,10 @@ func main() {
 
 	sigHup := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGHUP)
+
+	//daemon.SdNotify("READY=1")
+	systemd.NotifyReady()
+	systemd.NotifyStatus("running")
 
 	for {
 		select {
