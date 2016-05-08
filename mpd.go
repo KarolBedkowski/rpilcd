@@ -70,7 +70,9 @@ func (m *MPD) watch() (err error) {
 			glog.Infof("mpd.watch: end")
 			return
 		case subsystem := <-m.watcher.Event:
-			glog.Infof("mpd.watch: event: %v", subsystem)
+			if glog.V(1) {
+				glog.Infof("mpd.watch: event: %v", subsystem)
+			}
 			switch subsystem {
 			case "player":
 				m.Message <- MPDGetStatus()
@@ -78,7 +80,7 @@ func (m *MPD) watch() (err error) {
 				m.Message <- MPDGetStatus()
 			}
 		case err := <-m.watcher.Error:
-			glog.Errorf("mpd.watch: error event: %v", err)
+			//glog.Errorf("mpd.watch: error event: %v", err)
 			return err
 		}
 	}
@@ -102,8 +104,8 @@ func (m *MPD) Connect() (err error) {
 		for m.active {
 			if err = m.watch(); err != nil {
 				glog.Errorf("mpd.Connect: start watch error: %v", err)
+				time.Sleep(5 * time.Second)
 			}
-			time.Sleep(5 * time.Second)
 		}
 	}()
 	return
