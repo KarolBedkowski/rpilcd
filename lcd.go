@@ -20,18 +20,12 @@ func removeNlChars(str string) string {
 
 // Lcd output
 type Lcd struct {
-	msg chan string
-	end chan bool
-
 	lcd hd44780.HD44780
 }
 
 // NewLcd create and init new lcd output
 func NewLcd() (l *Lcd) {
-	l = &Lcd{
-		msg: make(chan string, 10),
-		end: make(chan bool, 1),
-	}
+	l = &Lcd{}
 	if configuration.DisplayConf.I2CAddr > 0 {
 		l.lcd = hd44780.NewI2C4bit(configuration.DisplayConf.I2CAddr)
 	} else {
@@ -57,29 +51,18 @@ func NewLcd() (l *Lcd) {
 	// stop
 	l.lcd.SetChar(2, []byte{0x0, 0x1f, 0x1f, 0x1f, 0x1f, 0x1f, 0x0, 0x0})
 
-	go func() {
-		for {
-			select {
-			case msg := <-l.msg:
-				l.lcd.DisplayLines(msg)
-			case _ = <-l.end:
-				l.lcd.Close()
-				return
-			}
-		}
-	}()
 	return l
 }
 
 // Display show some message
 func (l *Lcd) Display(msg string) {
-	l.msg <- msg
+	l.lcd.DisplayLines(msg)
 }
 
 // Close LCD
 func (l *Lcd) Close() {
 	glog.Infof("Lcd.Close")
-	l.end <- true
+	l.lcd.Close()
 }
 
 func (l *Lcd) ToggleBacklight() {
