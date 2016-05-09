@@ -43,8 +43,8 @@ type MPD struct {
 // NewMPD create new MPD client
 func NewMPD() *MPD {
 	return &MPD{
-		Message: make(chan *MPDStatus, 10),
-		end:     make(chan bool, 1),
+		Message: make(chan *MPDStatus),
+		end:     make(chan bool),
 		active:  true,
 	}
 }
@@ -73,12 +73,15 @@ func (m *MPD) watch() (err error) {
 			if glog.V(1) {
 				glog.Infof("mpd.watch: event: %v", subsystem)
 			}
-			switch subsystem {
-			case "player":
-				m.Message <- MPDGetStatus()
-			default:
-				m.Message <- MPDGetStatus()
-			}
+			m.Message <- MPDGetStatus()
+			/*
+				switch subsystem {
+				case "player":
+					m.Message <- MPDGetStatus()
+				default:
+					m.Message <- MPDGetStatus()
+				}
+			*/
 		case err := <-m.watcher.Error:
 			//glog.Errorf("mpd.watch: error event: %v", err)
 			return err
@@ -252,7 +255,7 @@ func MPDPrev() {
 	}
 }
 
-func MPDVolUp() {
+func changeVol(change int) {
 	con := mpdConnect()
 	if con != nil {
 		defer con.Close()
@@ -261,31 +264,24 @@ func MPDVolUp() {
 			if err != nil {
 				return
 			}
-			vol += 5
+			vol += change
 			if vol > 100 {
 				vol = 100
-			}
-			con.SetVolume(vol)
-		}
-	}
-}
-
-func MPDVolDown() {
-	con := mpdConnect()
-	if con != nil {
-		defer con.Close()
-		if stat, err := con.Status(); err == nil {
-			vol, err := strconv.Atoi(stat["volume"])
-			if err != nil {
-				return
-			}
-			vol -= 5
-			if vol < 0 {
+			} else if vol < 0 {
 				vol = 0
 			}
 			con.SetVolume(vol)
 		}
 	}
+
+}
+
+func MPDVolUp() {
+	changeVol(5)
+}
+
+func MPDVolDown() {
+	changeVol(-5)
 }
 
 func MPDPlaylists() (pls []string) {

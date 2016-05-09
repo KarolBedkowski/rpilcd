@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 	"github.com/golang/glog"
-	//_ "net/http/pprof"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"syscall"
@@ -97,11 +97,11 @@ func main() {
 
 	ticker := createTicker()
 
-	sig := make(chan os.Signal, 1)
+	sig := make(chan os.Signal)
 	signal.Notify(sig, os.Interrupt, os.Kill)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 
-	sigHup := make(chan os.Signal, 1)
+	sigHup := make(chan os.Signal)
 	signal.Notify(sig, syscall.SIGHUP)
 
 	//daemon.SdNotify("READY=1")

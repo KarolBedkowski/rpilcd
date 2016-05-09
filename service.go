@@ -19,7 +19,7 @@ func (s *UMServer) Start() {
 
 	glog.Infof("UMServer.Start starting (%s)...", s.Addr)
 
-	s.Message = make(chan string, 10)
+	s.Message = make(chan string)
 
 	go func() {
 		ln, err := net.Listen("tcp", s.Addr)
