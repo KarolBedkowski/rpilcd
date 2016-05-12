@@ -14,6 +14,12 @@
 		label = "playlists"
 		cmd = "playlists"
 		kind = "mpd"
+		
+		[[menu.items.items]]
+		label = "mpd update"
+		cmd = "mpc"
+		args = ["update"]
+		kind = "cmd"
 			
 		[[menu.items.items]]
 		label = "mpd restart"
@@ -47,14 +53,14 @@
 
 		[[menu.items.items]]
 		label = "shutdown"
-		cmd = "shutdown"
+		cmd = "/sbin/shutdown"
 		args = ["-h", "0"]
 		kind = "cmd"
 		run_in_background = true
 		
 		[[menu.items.items]]
 		label = "reboot"
-		cmd = "shutdown"
+		cmd = "/sbin/shutdown"
 		args = ["-r", "0"]
 		kind = "cmd"
 		run_in_background = true
@@ -67,6 +73,7 @@
 		cmd = "service"
 		args = ["rpilcd", "restart"]
 		kind = "cmd"
+		run_in_background = true
 		
 [keys]
 	toggle_lcd = "KEY_MODE"
