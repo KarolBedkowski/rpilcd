@@ -3,10 +3,10 @@ package main
 // Hitachi HD44780U support library
 
 import (
+	"github.com/KarolBedkowski/go-hd44780"
 	"github.com/golang/glog"
 	"golang.org/x/text/transform"
 	"golang.org/x/text/unicode/norm"
-	"k.prv/go-hd44780"
 )
 
 func removeNlChars(str string) string {
