@@ -79,19 +79,18 @@ func (d *ScreenMgr) NewCommand(msg string) {
 			d.screens = d.screens[:len(d.screens)-1]
 		}
 		d.display(false)
-		return
 	case ActionResultExit:
 		d.screens = nil
 		d.display(false)
-		return
 	case ActionResultOk:
 		if nextScreen != nil {
 			d.screens = append(d.screens, nextScreen)
 		}
 		d.display(false)
-		return
+	default:
+		d.AddUrgentMsg(msg)
 	}
-	d.AddUrgentMsg(msg)
+	d.lastCmdTime = time.Now()
 }
 
 func (d *ScreenMgr) currentScreen() Screen {
