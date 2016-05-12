@@ -12,7 +12,7 @@ type Lirc struct {
 
 func NewLirc() *Lirc {
 	l := &Lirc{
-		Events: make(chan string),
+		Events: make(chan string, 5),
 	}
 	if configuration.LircConf.PidFile == "" {
 		glog.Error("Lirc not configured")
