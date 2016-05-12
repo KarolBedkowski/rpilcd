@@ -2,27 +2,40 @@
  rpilcd 0.x.x
 ++++++++++++++
 
-:Credits: Copyright (c) Karol Będkowski, 2013-2015
+:Credits: Copyright (c) Karol Będkowski, 2013-2016
 :Licence: GPLv2+
 :Status: beta
 :Tags: rpi
 
 
 Use HD44780 LCD Module to monitor Raspberry Pi.
-For now - display informations from MPD daemon, load.
+Display informations from MPD daemon, load and configurable menu with 
+some actions (like shutdown, mpd playlist).
+Handle some events from lirc and control MPD and menu.
 
 Building
 ========
 Requirements:
- * GoLang 1.4, 1.5 (v1.4 on rpi don't handle signals)
+ * GoLang 1.4+ (v1.4 on rpi don't handle signals)
  * Libraries (go get):
 
-   * gompd (http://github.com/turbowookie/gompd/mpd)
-   * go-rpio (https://github.com/stianeikeland/go-rpio)
+   * gompd (github.com/fhs/gompd/mpd)
+   * lirc (github.com/chbmuc/lirc)
+   * glog (github.com/golang/glog)
+   * go-hd44780 - wraper for HD44680 (github.com/KarolBedkowski/go-hd44780)
+   
+     * github.com/zlowred/embd
+     * github.com/stianeikeland/go-rpio
+   
 
 Building:
  * go get .
  * `make` or `make build_pi` for RaspberryPi
+
+Configuration
+=============
+Sample configuration in "conf.toml".
+Keys definitions must be appropriate to Lirc configuration.
 
 Running
 =======
@@ -33,28 +46,17 @@ With gpio (on RPI) - require sudo.
 
 Options
 -------
- * `-mpdHost=pi:6600` - address:port mpd daemon
- * `-console`' - display messages on console instead of lcd
- * `-startService=true` - start local tcp server for urgent messages
- * `-serviceAddr=localhost:8681` - local tcp server address
+
+ `-conf`     configuration file; default "conf.toml"
+ `-console`  display messages on console instead of lcd
+ `-h`        show more configuration options - logging etc
 
 Urgent messages
 ---------------
-Send text or json-structure to localhost:8681 (or other configured by
---ws_addr param) some text; ie:
+Send text to localhost:8681 (or other configured address) some text; ie:
 ::
 
      echo 'test' | nc localhost 8681
-
-
-JSON structure:
-::
-
-   {
-      "Text": "some tekst to display",
-      "Timeout": 5,
-      "PutOnTop": true
-   }
 
 
 .. vim: ft=rst tw=72
