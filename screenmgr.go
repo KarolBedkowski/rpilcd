@@ -26,7 +26,12 @@ func NewScreenMgr(console bool) *ScreenMgr {
 		d.disp = NewConsole()
 	} else {
 		glog.Infof("main: starting lcd")
-		d.disp = NewLcd()
+		if lcd := NewLcd(); lcd != nil {
+			d.disp = lcd
+		} else {
+			glog.Infof("main: fail back to console")
+			d.disp = NewConsole()
+		}
 	}
 
 	d.disp.Display(" \n ")

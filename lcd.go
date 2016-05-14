@@ -24,7 +24,14 @@ type Lcd struct {
 }
 
 // NewLcd create and init new lcd output
-func NewLcd() (l *Lcd) {
+func NewLcd() *Lcd {
+	var l *Lcd
+	defer func() {
+		if e := recover(); e != nil {
+			glog.Infof("NewLcd failed create - recover: %v", e)
+		}
+	}()
+
 	l = &Lcd{}
 	if configuration.DisplayConf.I2CAddr > 0 {
 		l.lcd = hd44780.NewI2C4bit(configuration.DisplayConf.I2CAddr)
