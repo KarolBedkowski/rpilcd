@@ -50,7 +50,7 @@ func NewLcd() *Lcd {
 		Width:     lcdWidth,
 		lastLines: make([]string, 2, 2),
 	}
-	if configuration.DisplayConf.I2CAddr > 0 {
+	if configuration.DisplayConf.Display == "i2c" {
 		l.addr = configuration.DisplayConf.I2CAddr
 		glog.V(1).Infof("Starting hd44780 on i2c addr=%d", l.addr)
 
@@ -80,7 +80,13 @@ func NewLcd() *Lcd {
 		glog.V(1).Infof("Starting hd44780 on GPIO")
 		var err error
 		l.hd, err = hd44780.NewGPIO(
-			7, 8, 25, 24, 23, 18, 0,
+			configuration.DisplayConf.GpioRs,
+			configuration.DisplayConf.GpioEn,
+			configuration.DisplayConf.GpioD4,
+			configuration.DisplayConf.GpioD5,
+			configuration.DisplayConf.GpioD6,
+			configuration.DisplayConf.GpioD7,
+			configuration.DisplayConf.GpioBl,
 			hd44780.Positive,
 			hd44780.RowAddress16Col,
 			hd44780.TwoLine,

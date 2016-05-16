@@ -41,6 +41,14 @@ type (
 	DisplayConf struct {
 		RefreshInterval int
 		I2CAddr         byte `toml:"i2c_addr"`
+		Display         string
+		GpioRs          uint8
+		GpioEn          uint8
+		GpioD4          uint8
+		GpioD5          uint8
+		GpioD6          uint8
+		GpioD7          uint8
+		GpioBl          uint8
 	}
 
 	ServicesConf struct {

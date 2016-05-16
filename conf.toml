@@ -101,8 +101,18 @@
 host = "pi:6600"
 
 [display]
+display ="i2c"   # i2c, gpio, console
 refresh_interval = 1000
 i2c_addr = 63  # 0x3f
+# gpio mappings
+gpio_rs = 7
+gpio_en = 8
+gpio_d4 = 25
+gpio_d5 = 24
+gpio_d6 = 23
+gpio_d7 = 18
+gpio_bl = 0  # backlight
+
 
 [services]
 http_server_addr = ":8001"
