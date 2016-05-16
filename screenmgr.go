@@ -21,10 +21,9 @@ type ScreenMgr struct {
 
 func NewScreenMgr(console bool) *ScreenMgr {
 	d := &ScreenMgr{}
-	if console {
-		glog.Infof("main: starting console")
-		d.disp = NewConsole()
-	} else {
+
+	if !console && (configuration.DisplayConf.Display == "i2c" ||
+		configuration.DisplayConf.Display == "gpio") {
 		glog.Infof("main: starting lcd")
 		if lcd := NewLcd(); lcd != nil {
 			d.disp = lcd
@@ -32,6 +31,9 @@ func NewScreenMgr(console bool) *ScreenMgr {
 			glog.Infof("main: fail back to console")
 			d.disp = NewConsole()
 		}
+	} else {
+		glog.Infof("main: starting console")
+		d.disp = NewConsole()
 	}
 
 	d.disp.Display(" \n ")
