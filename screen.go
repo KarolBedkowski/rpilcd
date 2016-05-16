@@ -117,12 +117,16 @@ func (t *MenuItem) Show() (res []string, fixPart int) {
 func (t *MenuItem) Action(action string) (result int, screen Screen) {
 	switch action {
 	case configuration.Keys.Menu.Up:
-		t.cursor, t.offset = cursorScrollUp(
-			t.cursor, t.offset, len(t.Items))
+		t.cursor, t.offset = cursorScrollUp(t.cursor, t.offset, len(t.Items), 1)
+		return ActionResultOk, nil
+	case configuration.Keys.Menu.Up10:
+		t.cursor, t.offset = cursorScrollUp(t.cursor, t.offset, len(t.Items), 10)
 		return ActionResultOk, nil
 	case configuration.Keys.Menu.Down:
-		t.cursor, t.offset = cursorScrollDown(
-			t.cursor, t.offset, len(t.Items))
+		t.cursor, t.offset = cursorScrollDown(t.cursor, t.offset, len(t.Items), 1)
+		return ActionResultOk, nil
+	case configuration.Keys.Menu.Down10:
+		t.cursor, t.offset = cursorScrollDown(t.cursor, t.offset, len(t.Items), 10)
 		return ActionResultOk, nil
 	case configuration.Keys.Menu.Select:
 		item := t.Items[t.cursor]
@@ -402,10 +406,16 @@ func (m *MPDPlaylistsScreen) Valid() bool {
 func (m *MPDPlaylistsScreen) Action(action string) (result int, screen Screen) {
 	switch action {
 	case configuration.Keys.Menu.Up:
-		m.cursor, m.offset = cursorScrollUp(m.cursor, m.offset, len(m.playlists))
+		m.cursor, m.offset = cursorScrollUp(m.cursor, m.offset, len(m.playlists), 1)
+		return ActionResultOk, nil
+	case configuration.Keys.Menu.Up10:
+		m.cursor, m.offset = cursorScrollUp(m.cursor, m.offset, len(m.playlists), 10)
 		return ActionResultOk, nil
 	case configuration.Keys.Menu.Down:
-		m.cursor, m.offset = cursorScrollDown(m.cursor, m.offset, len(m.playlists))
+		m.cursor, m.offset = cursorScrollDown(m.cursor, m.offset, len(m.playlists), 1)
+		return ActionResultOk, nil
+	case configuration.Keys.Menu.Down10:
+		m.cursor, m.offset = cursorScrollDown(m.cursor, m.offset, len(m.playlists), 10)
 		return ActionResultOk, nil
 	case configuration.Keys.Menu.Select:
 		playlist := m.playlists[m.cursor]
@@ -460,12 +470,22 @@ func (m *MPDCurrPlaylistScreen) Action(action string) (result int, screen Screen
 	switch action {
 	case configuration.Keys.Menu.Up:
 		if len(m.songs) > 0 {
-			m.cursor, m.offset = cursorScrollUp(m.cursor, m.offset, len(m.songs))
+			m.cursor, m.offset = cursorScrollUp(m.cursor, m.offset, len(m.songs), 1)
+		}
+		return ActionResultOk, nil
+	case configuration.Keys.Menu.Up10:
+		if len(m.songs) > 0 {
+			m.cursor, m.offset = cursorScrollUp(m.cursor, m.offset, len(m.songs), 10)
 		}
 		return ActionResultOk, nil
 	case configuration.Keys.Menu.Down:
 		if len(m.songs) > 0 {
-			m.cursor, m.offset = cursorScrollDown(m.cursor, m.offset, len(m.songs))
+			m.cursor, m.offset = cursorScrollDown(m.cursor, m.offset, len(m.songs), 1)
+		}
+		return ActionResultOk, nil
+	case configuration.Keys.Menu.Down10:
+		if len(m.songs) > 0 {
+			m.cursor, m.offset = cursorScrollDown(m.cursor, m.offset, len(m.songs), 10)
 		}
 		return ActionResultOk, nil
 	case configuration.Keys.Menu.Select:
@@ -483,10 +503,10 @@ func (m *MPDCurrPlaylistScreen) Valid() bool {
 	return true
 }
 
-func cursorScrollUp(cursor, offset, items int) (rcursor, roffset int) {
-	cursor--
+func cursorScrollUp(cursor, offset, items, step int) (rcursor, roffset int) {
+	cursor -= step
 	if offset > cursor {
-		offset--
+		offset = cursor
 	}
 	if cursor < 0 {
 		cursor = items - 1
@@ -500,10 +520,13 @@ func cursorScrollUp(cursor, offset, items int) (rcursor, roffset int) {
 	return cursor, offset
 }
 
-func cursorScrollDown(cursor, offset, items int) (rcursor, roffset int) {
-	cursor++
+func cursorScrollDown(cursor, offset, items, step int) (rcursor, roffset int) {
+	cursor += step
 	if offset < cursor-lcdHeight+1 {
-		offset++
+		offset = cursor - 1
+		if offset < 0 {
+			offset = 0
+		}
 	}
 
 	if cursor >= items {

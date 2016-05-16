@@ -121,9 +121,13 @@ func main() {
 			}
 			ticker = createTicker()
 		case ev := <-lirc.Events:
-			scrMgr.NewCommand(ev)
+			if ev != "" {
+				scrMgr.NewCommand(ev)
+			}
 		case msg := <-ws.Message:
-			scrMgr.NewCommand(msg)
+			if msg != "" {
+				scrMgr.NewCommand(msg)
+			}
 		case msg := <-mpd.Message:
 			scrMgr.UpdateMpdStatus(msg)
 		case <-ticker.C:

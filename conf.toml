@@ -84,6 +84,8 @@
 	up = "KEY_VOLUMEUP"
 	down = "KEY_VOLUMEDOWN"
 	select = "KEY_PLAY"
+	up10 = "KEY_PREVIOUS"
+	down10 = "KEY_NEXT"
 
 	[keys.mpd]
 	play = "KEY_PLAY"

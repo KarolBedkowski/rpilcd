@@ -19,6 +19,8 @@ type (
 			Up     string
 			Down   string
 			Select string
+			Up10   string
+			Down10 string
 		}
 		MPD struct {
 			Play    string
