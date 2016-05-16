@@ -22,10 +22,7 @@ Requirements:
    * gompd (github.com/fhs/gompd/mpd)
    * lirc (github.com/chbmuc/lirc)
    * glog (github.com/golang/glog)
-   * go-hd44780 - wraper for HD44680 (github.com/KarolBedkowski/go-hd44780)
-   
-     * github.com/zlowred/embd
-     * github.com/stianeikeland/go-rpio
+   * github.com/zlowred/embd
    
 
 Building:
