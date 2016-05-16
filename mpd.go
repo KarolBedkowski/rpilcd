@@ -68,6 +68,7 @@ func (m *MPD) watch() (err error) {
 		select {
 		case _ = <-m.end:
 			glog.Infof("mpd.watch: end")
+			m.active = false
 			return
 		case subsystem := <-m.watcher.Event:
 			if glog.V(1) {
@@ -117,7 +118,6 @@ func (m *MPD) Connect() (err error) {
 // Close MPD client
 func (m *MPD) Close() {
 	glog.V(1).Info("mpd.Close")
-	m.active = false
 	if m.watcher != nil {
 		m.end <- true
 	}
