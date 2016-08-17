@@ -1,7 +1,7 @@
 VERSION:=$(shell git describe --always)
-DATE:=$(shell date)
-VERS:=$(VERSION) - $(DATE)
-LDFLAGS:="-X main.AppVersion '$(VERS)' -w -s"
+DATE:=$(shell date +%Y%m%d%H%M%S)
+VERS:=$(VERSION)-$(DATE)
+LDFLAGS:="-X main.AppVersion='$(VERS)' -w -s"
 # -gcflags "-N -l"
 
 .PHONY: build
