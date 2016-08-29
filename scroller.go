@@ -25,12 +25,12 @@ func (tsl *textScrollerLine) set(inp string, width int, fixPart int) {
 	tsl.needScroll = len(inp) > width
 	if tsl.needScroll {
 		tsl.line = inp + " | "
-	} else {
-		if len(inp) < width {
-			inp += strings.Repeat(" ", width-len(inp))
-		}
-		tsl.line = inp
+		return
 	}
+	if len(inp) < width {
+		inp += strings.Repeat(" ", width-len(inp))
+	}
+	tsl.line = inp
 }
 
 func (tsl *textScrollerLine) getAndScroll() string {

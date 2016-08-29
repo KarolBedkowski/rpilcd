@@ -24,14 +24,14 @@ func (s *UMServer) Start() {
 	go func() {
 		ln, err := net.Listen("tcp", s.Addr)
 		if err != nil {
-			glog.Errorf("UMServer.Start Listen error: %s", err.Error())
+			glog.Error("UMServer.Start Listen error: ", err.Error())
 			return
 		}
 		defer ln.Close()
 		for {
 			conn, err := ln.Accept()
 			if err != nil {
-				glog.Errorf("UMServer.Start Error accepting: %s", err.Error())
+				glog.Error("UMServer.Start Error accepting: ", err.Error())
 				return
 			}
 			buf := make([]byte, 1024)

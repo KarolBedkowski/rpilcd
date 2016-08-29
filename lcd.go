@@ -55,7 +55,7 @@ func NewLcd() *Lcd {
 		glog.V(1).Infof("Starting hd44780 on i2c addr=%d", l.addr)
 
 		if err := embd.InitI2C(); err != nil {
-			glog.Errorf("Can't open lcd: %s", err.Error())
+			glog.Error("Can't open lcd: ", err.Error())
 			return nil
 		}
 
@@ -73,7 +73,7 @@ func NewLcd() *Lcd {
 			hd44780.EntryIncrement,
 		)
 		if err != nil {
-			glog.Fatal("Can't open i2c lcd: %s", err.Error())
+			glog.Fatal("Can't open i2c lcd: ", err.Error())
 			return nil
 		}
 	} else {
@@ -95,7 +95,7 @@ func NewLcd() *Lcd {
 			hd44780.EntryIncrement,
 		)
 		if err != nil {
-			glog.Fatal("Can't open gpio lcd: %s", err.Error())
+			glog.Fatal("Can't open gpio lcd: ", err.Error())
 			return nil
 		}
 	}
@@ -124,6 +124,7 @@ func (l *Lcd) Display(msg string) {
 	}
 }
 
+// DisplayLine display `text` in `line`.
 func (l *Lcd) DisplayLine(line int, text string) {
 	if !l.active {
 		return
@@ -163,6 +164,7 @@ func (l *Lcd) Close() {
 	glog.Infof("Lcd.Close")
 }
 
+// ToggleBacklight turn off/on lcd backlight
 func (l *Lcd) ToggleBacklight() {
 	if !l.active {
 		return

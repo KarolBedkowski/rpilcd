@@ -24,15 +24,15 @@ func NewScreenMgr(console bool) *ScreenMgr {
 
 	if !console && (configuration.DisplayConf.Display == "i2c" ||
 		configuration.DisplayConf.Display == "gpio") {
-		glog.Infof("main: starting lcd")
+		glog.Info("main: starting lcd")
 		if lcd := NewLcd(); lcd != nil {
 			d.disp = lcd
 		} else {
-			glog.Infof("main: fail back to console")
+			glog.Info("main: fail back to console")
 			d.disp = NewConsole()
 		}
 	} else {
-		glog.Infof("main: starting console")
+		glog.Info("main: starting console")
 		d.disp = NewConsole()
 	}
 
@@ -50,11 +50,13 @@ func (d *ScreenMgr) Close() {
 }
 
 func (d *ScreenMgr) NewCommand(msg string) {
-	now := time.Now()
-	if now.Sub(d.lastCmdTime) < minCmdsInterval {
+	if time.Now().Sub(d.lastCmdTime) < minCmdsInterval {
 		return
 	}
-	d.lastCmdTime = now
+
+	defer func() {
+		d.lastCmdTime = time.Now()
+	}()
 
 	msg = strings.TrimSpace(msg)
 	glog.Infof("NewCommand '%s'", msg)
@@ -81,7 +83,7 @@ func (d *ScreenMgr) NewCommand(msg string) {
 
 	screen := d.currentScreen()
 	if glog.V(1) {
-		glog.Infof("current screen: %#v", screen)
+		glog.Info("current screen: %#v", screen)
 	}
 	res, nextScreen := screen.Action(msg)
 	switch res {
@@ -101,7 +103,6 @@ func (d *ScreenMgr) NewCommand(msg string) {
 	default:
 		d.AddUrgentMsg(msg)
 	}
-	d.lastCmdTime = time.Now()
 }
 
 func (d *ScreenMgr) currentScreen() Screen {

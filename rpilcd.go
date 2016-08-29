@@ -10,7 +10,6 @@ import (
 	"syscall"
 	"time"
 
-	//"github.com/coreos/go-systemd/daemon"
 	"github.com/Merovius/systemd"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -72,20 +71,18 @@ func main() {
 	}
 
 	defer func() {
-		//if e := recover(); e != nil {
-		//	glog.Infof("Recover: %v", e)
-		//}
-		//daemon.SdNotify("STOPPING=1")
+		if e := recover(); e != nil {
+			glog.Infof("Recover: %v", e)
+		}
 		systemd.Notify("STOPPING=1\r\nSTATUS=stopping")
-		glog.Infof("main.defer: closing lirc")
+		glog.Info("main.defer: closing lirc")
 		lirc.Close()
-		glog.Infof("main.defer: closing disp")
+		glog.Info("main.defer: closing disp")
 		scrMgr.Close()
-		glog.Infof("main.defer: closing mpd")
+		glog.Info("main.defer: closing mpd")
 		mpd.Close()
 		time.Sleep(2 * time.Second)
-		glog.Infof("main.defer: all closed")
-		//daemon.SdNotify("STATUS=stopped")
+		glog.Info("main.defer: all closed")
 		systemd.NotifyStatus("stopped")
 	}()
 
@@ -95,7 +92,7 @@ func main() {
 
 	time.Sleep(1 * time.Second)
 
-	glog.V(1).Infof("main: entering loop")
+	glog.V(1).Info("main: entering loop")
 
 	ticker := createTicker()
 
@@ -106,7 +103,6 @@ func main() {
 	sigHup := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGHUP)
 
-	//daemon.SdNotify("READY=1")
 	systemd.NotifyReady()
 	systemd.NotifyStatus("running")
 
@@ -115,7 +111,7 @@ func main() {
 		case _ = <-sig:
 			return
 		case _ = <-sigHup:
-			glog.Infof("Reloading configuration")
+			glog.Info("Reloading configuration")
 			ticker.Stop()
 			err := loadConfiguration()
 			if err != nil {

@@ -12,7 +12,7 @@ import (
 func mpdConnect() *mpd.Client {
 	con, err := mpd.Dial("tcp", configuration.MPDConf.Host)
 	if err != nil {
-		glog.Errorf("mpdConnect error:%v", err.Error())
+		glog.Error("mpdConnect error: ", err.Error())
 	}
 	return con
 }
@@ -55,8 +55,8 @@ func (m *MPD) watch() (err error) {
 		glog.Errorf("mpd.watch: connect to %v error: %v", configuration.MPDConf.Host, err.Error())
 		return err
 	}
-	glog.Infof("mpd.watch: connected to %v", configuration.MPDConf.Host)
 
+	glog.Info("mpd.watch: connected to ", configuration.MPDConf.Host)
 	glog.V(1).Infof("mpd.watch: starting watch")
 
 	m.Message <- MPDGetStatus()
@@ -67,12 +67,12 @@ func (m *MPD) watch() (err error) {
 		}
 		select {
 		case _ = <-m.end:
-			glog.Infof("mpd.watch: end")
+			glog.Info("mpd.watch: end")
 			m.active = false
 			return
 		case subsystem := <-m.watcher.Event:
 			if glog.V(1) {
-				glog.Infof("mpd.watch: event: %v", subsystem)
+				glog.Info("mpd.watch: event: ", subsystem)
 			}
 			m.Message <- MPDGetStatus()
 			/*
@@ -94,7 +94,6 @@ func (m *MPD) watch() (err error) {
 
 // Connect to mpd daemon
 func (m *MPD) Connect() (err error) {
-
 	go func() {
 		defer func() {
 			glog.Infof("mpd.watch: closing")
@@ -136,7 +135,7 @@ func MPDGetStatus() (s *MPDStatus) {
 		return
 	}
 	if glog.V(1) {
-		glog.Infof("mpd.GetStatus: connected to %s", configuration.MPDConf.Host)
+		glog.Info("mpd.GetStatus: connected to ", configuration.MPDConf.Host)
 	}
 
 	defer con.Close()
@@ -273,7 +272,6 @@ func changeVol(change int) {
 			con.SetVolume(vol)
 		}
 	}
-
 }
 
 func MPDVolUp() {
@@ -294,7 +292,7 @@ func MPDPlaylists() (pls []string) {
 				pls = append(pls, pl["playlist"])
 			}
 		} else {
-			glog.Errorf("MPD.Playlists list error: %s", err)
+			glog.Error("MPD.Playlists list error: ", err)
 		}
 	}
 	return
@@ -324,7 +322,7 @@ func MPDCurrPlaylist() (pls []string, pos int) {
 				}
 			}
 		} else {
-			glog.Errorf("MPD.CurrPlaylist list error: %s", err)
+			glog.Error("MPD.CurrPlaylist list error: ", err)
 		}
 		if stat, err := con.Status(); err == nil {
 			pos, _ = strconv.Atoi(stat["song"])
@@ -357,5 +355,4 @@ func MPDVolMute() {
 			con.SetVolume(vol)
 		}
 	}
-
 }
