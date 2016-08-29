@@ -1,7 +1,6 @@
 VERSION:=$(shell git describe --always)
-DATE:=$(shell date +%Y%m%d%H%M%S)
-VERS:=$(VERSION)-$(DATE)
-LDFLAGS:="-X main.AppVersion='$(VERS)' -w -s"
+DATE:=$(shell date +%Y%m%d_%H%M%S)
+LDFLAGS:=-X main.AppVersion=$(VERSION) -X main.AppDate=$(DATE) -w -s
 # -gcflags "-N -l"
 
 .PHONY: build
@@ -17,7 +16,7 @@ rpilcd_pi: *.go
 		CHOST="armv6j-hardfloat-linux-gnueabi" \
 		CXX=arm-linux-gnueabihf-g++ CC=arm-linux-gnueabihf-gcc \
 		GOOS=linux GOARCH=arm GOARM=6 CGO_ENABLED=1 \
-		go build -v --ldflags '-extldflags "-static"' --ldflags $(LDFLAGS) -o rpilcd_pi
+		go build -v --ldflags '-extldflags "-static"' --ldflags "$(LDFLAGS)" -o rpilcd_pi
 
 #	CGO_ENABLED="0" GOGCCFLAGS="-fPIC -O4 -Ofast -march=native -s" GOARCH=arm GOARM=6 go build -o rpilcd_pi -ldflags "$(LDFLAGS) -w" -v
 	#CGO_ENABLED="0" GOGCCFLAGS="-g -fPIC -march=native -s" GOARCH=arm GOARM=5 go build -o rpilcd -ldflags $(LDFLAGS)

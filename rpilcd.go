@@ -22,6 +22,9 @@ const minMpdActInterval = time.Duration(100) * time.Millisecond
 // AppVersion global var
 var AppVersion = "dev"
 
+// AppDate build date
+var AppDate = "unknown"
+
 // Display (output) interface
 type Display interface {
 	Display(string)
@@ -31,18 +34,16 @@ type Display interface {
 }
 
 func main() {
-	//daemon.SdNotify("STATUS=starting")
-	systemd.NotifyStatus("starting")
-
-	systemd.AutoWatchdog()
-
 	//go func() {
 	//glog.Println(http.ListenAndServe(":6060", nil))
 	//}()
 	soutput := flag.Bool("console", false, "Print on console instead of lcd")
 	flag.Parse()
 
-	glog.Infof("RPI LCD ver %s starting...", AppVersion)
+	systemd.NotifyStatus("starting")
+	systemd.AutoWatchdog()
+
+	glog.Infof("RPI LCD ver %s (build %s) starting...", AppVersion, AppDate)
 
 	err := loadConfiguration()
 	if err != nil {
