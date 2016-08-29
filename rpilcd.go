@@ -27,6 +27,7 @@ type Display interface {
 	Display(string)
 	Close()
 	ToggleBacklight()
+	Active() bool
 }
 
 func main() {

@@ -72,6 +72,10 @@ func (d *ScreenMgr) NewCommand(msg string) {
 		return
 	case configuration.Keys.ToggleLCD:
 		d.disp.ToggleBacklight()
+		if !d.disp.Active() {
+			d.screens = nil
+			d.display(false)
+		}
 		return
 	}
 

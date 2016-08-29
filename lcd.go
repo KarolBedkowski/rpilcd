@@ -191,3 +191,8 @@ func (l *Lcd) setChar(pos byte, def []byte) {
 		l.hd.WriteChar(d)
 	}
 }
+
+// Active return true when lcd is enabled and working
+func (l *Lcd) Active() bool {
+	return l.active && l.backlight
+}

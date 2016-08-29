@@ -42,12 +42,21 @@ func (l *Console) Close() {
 func (l *Console) display(text string) {
 	l.Lock()
 	defer l.Unlock()
-	for i, l := range strings.Split(text, "\n") {
-		glog.Infof("SimpleDisplay: [%d] '%s'", i, l)
-		time.Sleep(consoleDelay)
+	if l.active {
+		for i, l := range strings.Split(text, "\n") {
+			glog.Infof("SimpleDisplay: [%d] '%s'", i, l)
+			time.Sleep(consoleDelay)
+		}
+	} else {
+		glog.Infof("SimpleDisplay: not active")
 	}
 }
 
 func (l *Console) ToggleBacklight() {
 	glog.Infof("SimpleDisplay: toggle backlight")
+	l.active = !l.active
+}
+
+func (l *Console) Active() bool {
+	return l.active
 }
