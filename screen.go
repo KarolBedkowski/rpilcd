@@ -140,38 +140,48 @@ func (t *MenuItem) Action(action string) (result int, screen Screen) {
 	return
 }
 
+func (t *MenuItem) executeInBackground() string {
+	attr := &os.ProcAttr{
+		Dir:   ".",
+		Env:   os.Environ(),
+		Files: []*os.File{os.Stdin, nil, os.Stderr},
+	}
+	args := []string{t.Cmd}
+	args = append(args, t.Args...)
+
+	process, err := os.StartProcess(t.Cmd, args, attr)
+	if err != nil {
+		glog.Errorf("Start process error: err=%v", err)
+		return err.Error()
+	}
+
+	err = process.Release()
+	if err == nil {
+		return "<started>"
+	}
+
+	glog.Errorf("Start process release error: err=%v", err)
+	return err.Error()
+}
+
 func (t *MenuItem) execute() (result int, screen Screen) {
 	switch t.Kind {
 	case "cmd":
 		var res string
 		if t.RunInBackground {
-			attr := &os.ProcAttr{
-				Dir:   ".",
-				Env:   os.Environ(),
-				Files: []*os.File{os.Stdin, nil, os.Stderr},
-			}
-			args := []string{t.Cmd}
-			args = append(args, t.Args...)
-			if process, err := os.StartProcess(t.Cmd, args, attr); err == nil {
-				if err = process.Release(); err != nil {
-					glog.Errorf("Start process error: err=%v", err)
-				} else {
-					res = "<started>"
-				}
-			} else {
-				glog.Errorf("Start process error: err=%v", err)
-				res = "Err: " + err.Error()
-			}
-		} else {
-			out, err := exec.Command(t.Cmd, t.Args...).CombinedOutput()
-			res = strings.TrimSpace(string(out))
-			glog.Infof("Execute: err=%v, res=%v", err, res)
+			res := t.executeInBackground()
+			lines := strings.Split(res, "\n")
+			return ActionResultOk, &TextScreen{Lines: lines}
 		}
+		out, err := exec.Command(t.Cmd, t.Args...).CombinedOutput()
+		glog.Infof("Execute: err=%v, res=%v", err, res)
+		res = strings.TrimSpace(string(out))
 		if res == "" {
 			res = "<no output>"
 		}
 		lines := strings.Split(res, "\n")
 		return ActionResultOk, &TextScreen{Lines: lines}
+
 	case "mpd":
 		switch t.Cmd {
 		case "playlists":
@@ -259,28 +269,30 @@ func (s *StatusScreen) Valid() bool {
 func (s *StatusScreen) MpdUpdate(st *MPDStatus) {
 	s.lastMpdMessage = st
 
-	if st != nil {
-		if st.Error != "" {
-			s.last = []string{
-				loadAvg() + " " + mpdStatusToStr(st.Status) + " " + st.Volume,
-				"Err:" + removeNlChars(st.Error),
-			}
-			return
+	if st == nil {
+		n := time.Now()
+		s.last = []string{
+			loadAvg() + " " + mpdStatusToStr(st.Status),
+			n.Format("01-02 15:04:05"),
 		}
-		if st.Status != "stop" {
-			s.last = []string{
-				loadAvg() + " " + mpdStatusToStr(st.Status) + " " + st.Flags + " " + st.Volume,
-				removeNlChars(st.CurrentSong),
-			}
-			return
-		}
+		return
 	}
 
-	n := time.Now()
-	s.last = []string{
-		loadAvg() + " " + mpdStatusToStr(st.Status),
-		n.Format("01-02 15:04:05"),
+	if st.Error != "" {
+		s.last = []string{
+			loadAvg() + " " + mpdStatusToStr(st.Status) + " " + st.Volume,
+			"Err:" + removeNlChars(st.Error),
+		}
+		return
 	}
+
+	if st.Status != "stop" {
+		s.last = []string{
+			loadAvg() + " " + mpdStatusToStr(st.Status) + " " + st.Flags + " " + st.Volume,
+			removeNlChars(st.CurrentSong),
+		}
+	}
+	return
 }
 
 func loadAvg() string {

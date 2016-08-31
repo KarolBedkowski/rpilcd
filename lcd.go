@@ -126,15 +126,7 @@ func (l *Lcd) Display(msg string) {
 
 // DisplayLine display `text` in `line`.
 func (l *Lcd) DisplayLine(line int, text string) {
-	if !l.active {
-		return
-	}
-
-	if line >= l.Lines {
-		return
-	}
-
-	if !l.backlight {
+	if !l.active || line >= l.Lines || !l.backlight {
 		return
 	}
 
@@ -156,7 +148,6 @@ func (l *Lcd) DisplayLine(line int, text string) {
 	for _, c := range text {
 		l.hd.WriteChar(byte(c))
 	}
-
 }
 
 // Close LCD

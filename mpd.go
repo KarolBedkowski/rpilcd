@@ -17,6 +17,12 @@ func mpdConnect() *mpd.Client {
 	return con
 }
 
+func connClose(con *mpd.Client) {
+	if con != nil {
+		con.Close()
+	}
+}
+
 // MPDStatus of MPD daemon
 type MPDStatus struct {
 	CurrentSong string
@@ -125,9 +131,7 @@ func (m *MPD) Close() {
 // GetStatus connect to mpd and get current status
 func MPDGetStatus() (s *MPDStatus) {
 	s = &MPDStatus{
-		Playing:     false,
-		Flags:       "ERR",
-		CurrentSong: "",
+		Flags: "ERR",
 	}
 
 	con := mpdConnect()
@@ -138,7 +142,7 @@ func MPDGetStatus() (s *MPDStatus) {
 		glog.Info("mpd.GetStatus: connected to ", configuration.MPDConf.Host)
 	}
 
-	defer con.Close()
+	defer connClose(con)
 
 	status, err := con.Status()
 	if err != nil {
@@ -183,29 +187,21 @@ func MPDGetStatus() (s *MPDStatus) {
 
 	hasATN := false
 
-	if a, ok := song["Name"]; ok && a != "" {
-		res = append(res, a)
-		hasATN = true
-	}
-	if a, ok := song["Artist"]; ok && a != "" {
-		res = append(res, a)
-		hasATN = true
-	}
-	if a, ok := song["Title"]; ok && a != "" {
-		res = append(res, a)
-		hasATN = true
-	}
-	if a, ok := song["Track"]; ok && a != "" {
-		res = append(res, a)
-	}
-	if a, ok := song["Album"]; ok && a != "" {
-		res = append(res, a)
+	add := func(key string, atn bool) {
+		if a, ok := song[key]; ok && a != "" {
+			res = append(res, a)
+			hasATN = atn || hasATN
+		}
 	}
 
+	add("Name", true)
+	add("Artist", true)
+	add("Title", true)
+	add("Track", false)
+	add("Album", false)
+
 	if !hasATN {
-		if a, ok := song["file"]; ok && a != "" {
-			res = append(res, a)
-		}
+		add("file", false)
 	}
 
 	s.CurrentSong = strings.Join(res, "; ")
@@ -215,7 +211,7 @@ func MPDGetStatus() (s *MPDStatus) {
 func MPDPlay(index int) {
 	con := mpdConnect()
 	if con != nil {
-		defer con.Close()
+		defer connClose(con)
 		con.Play(index)
 	}
 }
@@ -223,7 +219,7 @@ func MPDPlay(index int) {
 func MPDStop() {
 	con := mpdConnect()
 	if con != nil {
-		defer con.Close()
+		defer connClose(con)
 		con.Stop()
 	}
 }
@@ -231,7 +227,7 @@ func MPDStop() {
 func MPDPause() {
 	con := mpdConnect()
 	if con != nil {
-		defer con.Close()
+		defer connClose(con)
 		if stat, err := con.Status(); err == nil {
 			err = con.Pause(stat["state"] != "pause")
 		}
@@ -241,7 +237,7 @@ func MPDPause() {
 func MPDNext() {
 	con := mpdConnect()
 	if con != nil {
-		defer con.Close()
+		defer connClose(con)
 		con.Next()
 	}
 }
@@ -249,28 +245,29 @@ func MPDNext() {
 func MPDPrev() {
 	con := mpdConnect()
 	if con != nil {
-		defer con.Close()
+		defer connClose(con)
 		con.Previous()
 	}
 }
 
 func changeVol(change int) {
 	con := mpdConnect()
-	if con != nil {
-		defer con.Close()
-		if stat, err := con.Status(); err == nil {
-			vol, err := strconv.Atoi(stat["volume"])
-			if err != nil {
-				return
-			}
-			vol += change
-			if vol > 100 {
-				vol = 100
-			} else if vol < 0 {
-				vol = 0
-			}
-			con.SetVolume(vol)
+	if con == nil {
+		return
+	}
+	defer connClose(con)
+	if stat, err := con.Status(); err == nil {
+		vol, err := strconv.Atoi(stat["volume"])
+		if err != nil {
+			return
 		}
+		vol += change
+		if vol > 100 {
+			vol = 100
+		} else if vol < 0 {
+			vol = 0
+		}
+		con.SetVolume(vol)
 	}
 }
 
@@ -285,7 +282,7 @@ func MPDVolDown() {
 func MPDPlaylists() (pls []string) {
 	con := mpdConnect()
 	if con != nil {
-		defer con.Close()
+		defer connClose(con)
 		playlists, err := con.ListPlaylists()
 		if err == nil {
 			for _, pl := range playlists {
@@ -301,7 +298,7 @@ func MPDPlaylists() (pls []string) {
 func MPDPlayPlaylist(playlist string) {
 	con := mpdConnect()
 	if con != nil {
-		defer con.Close()
+		defer connClose(con)
 		con.Clear()
 		con.PlaylistLoad(playlist, -1, -1)
 		con.Play(0)
@@ -310,22 +307,23 @@ func MPDPlayPlaylist(playlist string) {
 
 func MPDCurrPlaylist() (pls []string, pos int) {
 	con := mpdConnect()
-	if con != nil {
-		defer con.Close()
-		playlists, err := con.PlaylistInfo(-1, -1)
-		if err == nil {
-			for _, pl := range playlists {
-				if title, ok := pl["Title"]; ok {
-					pls = append(pls, title)
-				} else {
-					pls = append(pls, pl["file"])
-				}
-			}
+	if con == nil {
+		return
+	}
+	defer connClose(con)
+	if stat, err := con.Status(); err == nil {
+		pos, _ = strconv.Atoi(stat["song"])
+	}
+	playlists, err := con.PlaylistInfo(-1, -1)
+	if err != nil {
+		glog.Error("MPD.CurrPlaylist list error: ", err)
+		return
+	}
+	for _, pl := range playlists {
+		if title, ok := pl["Title"]; ok {
+			pls = append(pls, title)
 		} else {
-			glog.Error("MPD.CurrPlaylist list error: ", err)
-		}
-		if stat, err := con.Status(); err == nil {
-			pos, _ = strconv.Atoi(stat["song"])
+			pls = append(pls, pl["file"])
 		}
 	}
 	return
@@ -335,24 +333,30 @@ var preMuteVol = -1
 
 func MPDVolMute() {
 	con := mpdConnect()
-	if con != nil {
-		defer con.Close()
-		if stat, err := con.Status(); err == nil {
-			vol, err := strconv.Atoi(stat["volume"])
-			if err != nil {
-				return
-			}
-			if vol == 0 {
-				if preMuteVol > 0 {
-					vol = preMuteVol
-				} else {
-					vol = 100
-				}
-			} else {
-				preMuteVol = vol
-				vol = 0
-			}
-			con.SetVolume(vol)
+	if con == nil {
+		return
+	}
+	defer connClose(con)
+
+	stat, err := con.Status()
+	if err != nil {
+		glog.Error("MPD.MPDVolMute error: ", err)
+		return
+	}
+
+	vol, err := strconv.Atoi(stat["volume"])
+	if err != nil {
+		return
+	}
+
+	if vol == 0 {
+		if preMuteVol > 0 {
+			con.SetVolume(preMuteVol)
+		} else {
+			con.SetVolume(100)
 		}
+	} else {
+		preMuteVol = vol
+		con.SetVolume(0)
 	}
 }

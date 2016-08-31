@@ -27,7 +27,11 @@ func (s *UMServer) Start() {
 			glog.Error("UMServer.Start Listen error: ", err.Error())
 			return
 		}
-		defer ln.Close()
+		defer func() {
+			if ln != nil {
+				ln.Close()
+			}
+		}()
 		for {
 			conn, err := ln.Accept()
 			if err != nil {

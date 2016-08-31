@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/golang/glog"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -13,8 +12,6 @@ const (
 
 // Console simulate lcd without physical lcd
 type Console struct {
-	sync.Mutex
-
 	active bool
 }
 
@@ -34,14 +31,10 @@ func (l *Console) Display(msg string) {
 // Close console
 func (l *Console) Close() {
 	glog.Infof("Console close")
-	l.Lock()
-	defer l.Unlock()
 	l.active = false
 }
 
 func (l *Console) display(text string) {
-	l.Lock()
-	defer l.Unlock()
 	if l.active {
 		for i, l := range strings.Split(text, "\n") {
 			glog.Infof("SimpleDisplay: [%d] '%s'", i, l)

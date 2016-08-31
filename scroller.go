@@ -35,12 +35,13 @@ func (tsl *textScrollerLine) set(inp string, width int, fixPart int) {
 
 func (tsl *textScrollerLine) getAndScroll() string {
 	res := tsl.line
-	if tsl.needScroll {
-		if tsl.fixPart > 0 {
-			tsl.line = tsl.line[:tsl.fixPart] + tsl.line[tsl.fixPart+1:] + string(tsl.line[tsl.fixPart])
-		} else {
-			tsl.line = tsl.line[1:] + string(tsl.line[0])
-		}
+	if !tsl.needScroll {
+		return res
+	}
+	if tsl.fixPart > 0 {
+		tsl.line = tsl.line[:tsl.fixPart] + tsl.line[tsl.fixPart+1:] + string(tsl.line[tsl.fixPart])
+	} else {
+		tsl.line = tsl.line[1:] + string(tsl.line[0])
 	}
 	return res
 }
@@ -70,7 +71,6 @@ func NewTextScroller(width, height int) *TextScroller {
 
 // Set put some text to TextScroller
 func (t *TextScroller) Set(text string, fixPart int) {
-	//log.Printf("TextScroller.Set: %v", text)
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	for line, l := range strings.SplitN(text, "\n", t.Height) {
