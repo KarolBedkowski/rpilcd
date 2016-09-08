@@ -15,7 +15,7 @@ rpilcd_pi: *.go
 	GOGCCFLAGS="-fPIC -O4 -Ofast -march=native -pipe -mcpu=arm1176jzf-s -mfpu=vfp -mfloat-abi=hard -s" \
 		CHOST="armv6j-hardfloat-linux-gnueabi" \
 		CXX=arm-linux-gnueabihf-g++ CC=arm-linux-gnueabihf-gcc \
-		GOOS=linux GOARCH=arm GOARM=6 CGO_ENABLED=1 \
+		GOOS=linux GOARCH=arm GOARM=6 CGO_ENABLED=0 \
 		go build -v --ldflags '-extldflags "-static"' --ldflags "$(LDFLAGS)" -o rpilcd_pi
 
 #	CGO_ENABLED="0" GOGCCFLAGS="-fPIC -O4 -Ofast -march=native -s" GOARCH=arm GOARM=6 go build -o rpilcd_pi -ldflags "$(LDFLAGS) -w" -v

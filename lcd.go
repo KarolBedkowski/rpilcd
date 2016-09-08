@@ -3,13 +3,13 @@ package main
 // Hitachi HD44780U support library
 
 import (
+	"bytes"
 	"github.com/golang/glog"
 	"github.com/zlowred/embd"
 	"github.com/zlowred/embd/controller/hd44780"
 	_ "github.com/zlowred/embd/host/rpi"
 	"golang.org/x/text/transform"
 	"golang.org/x/text/unicode/norm"
-	"strings"
 )
 
 func removeNlChars(str string) string {
@@ -31,7 +31,7 @@ type Lcd struct {
 
 	// i2c address
 	addr      byte
-	lastLines []string
+	lastLines [][]byte
 	active    bool
 	backlight bool
 }
@@ -48,7 +48,7 @@ func NewLcd() *Lcd {
 	l = &Lcd{
 		Lines:     2,
 		Width:     lcdWidth,
-		lastLines: make([]string, 2, 2),
+		lastLines: make([][]byte, 2, 2),
 	}
 	if configuration.DisplayConf.Display == "i2c" {
 		l.addr = configuration.DisplayConf.I2CAddr
@@ -119,19 +119,20 @@ func NewLcd() *Lcd {
 
 // Display show some message
 func (l *Lcd) Display(msg string) {
-	for line, text := range strings.Split(msg, "\n") {
+	msgb := []byte(msg)
+	for line, text := range bytes.Split(msgb, []byte("\n")) {
 		l.DisplayLine(line, text)
 	}
 }
 
 // DisplayLine display `text` in `line`.
-func (l *Lcd) DisplayLine(line int, text string) {
+func (l *Lcd) DisplayLine(line int, text []byte) {
 	if !l.active || line >= l.Lines || !l.backlight {
 		return
 	}
 
 	// skip not changed lines
-	if l.lastLines[line] == text {
+	if bytes.Compare(l.lastLines[line], text) == 0 {
 		return
 	}
 
@@ -139,7 +140,7 @@ func (l *Lcd) DisplayLine(line int, text string) {
 
 	textLen := len(text)
 	if textLen < lcdWidth {
-		text = text + strings.Repeat(" ", l.Width-textLen)
+		text = append(text, bytes.Repeat([]byte(" "), l.Width-textLen)...)
 	} else if textLen > l.Width {
 		text = text[:l.Width]
 	}
@@ -169,7 +170,7 @@ func (l *Lcd) ToggleBacklight() {
 		l.hd.BacklightOn()
 		l.backlight = true
 		for i, line := range l.lastLines {
-			l.lastLines[i] = ""
+			l.lastLines[i] = []byte{}
 			l.DisplayLine(i, line)
 		}
 	}

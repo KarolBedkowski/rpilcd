@@ -10,10 +10,10 @@ import (
 const minCmdsInterval = time.Duration(500) * time.Millisecond
 
 type ScreenMgr struct {
-	ums         *UrgentMsgScreen
-	ts          *TextScroller
+	ums         UrgentMsgScreen
+	ts          TextScroller
 	disp        Display
-	statusScr   *StatusScreen
+	statusScr   StatusScreen
 	screens     []Screen
 	lastCmdTime time.Time
 	lastContent string
@@ -39,8 +39,8 @@ func NewScreenMgr(console bool) *ScreenMgr {
 	d.disp.Display(" \n ")
 
 	d.ts = NewTextScroller(lcdWidth, lcdHeight)
-	d.statusScr = &StatusScreen{}
-	d.ums = &UrgentMsgScreen{}
+	//	d.statusScr = &StatusScreen{}
+	//	d.ums = &UrgentMsgScreen{}
 
 	return d
 }
@@ -107,12 +107,12 @@ func (d *ScreenMgr) NewCommand(msg string) {
 
 func (d *ScreenMgr) currentScreen() Screen {
 	if d.ums.HasMessages() {
-		return d.ums
+		return &d.ums
 	}
 	if len(d.screens) > 0 {
 		return d.screens[len(d.screens)-1]
 	}
-	return d.statusScr
+	return &d.statusScr
 
 }
 

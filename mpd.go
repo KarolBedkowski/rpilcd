@@ -6,6 +6,7 @@ import (
 	"github.com/golang/glog"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -33,6 +34,14 @@ type MPDStatus struct {
 	Error       string
 }
 
+var mpdStatusFree = sync.Pool{
+	New: func() interface{} { return new(MPDStatus) },
+}
+
+func (s *MPDStatus) Free() {
+	mpdStatusFree.Put(s)
+}
+
 func (s *MPDStatus) String() string {
 	return fmt.Sprintf("MPDStatus[Playing=%v Status=%v Flags=%v Volume=%v CurrentSong='%v']",
 		s.Playing, s.Status, s.Flags, s.Volume, s.CurrentSong)
@@ -57,6 +66,14 @@ func NewMPD() *MPD {
 
 func (m *MPD) watch() (err error) {
 	m.watcher, err = mpd.NewWatcher("tcp", configuration.MPDConf.Host, "")
+
+	defer func(w *mpd.Watcher) {
+		if w != nil {
+			w.Close()
+		}
+		m.watcher = nil
+	}(m.watcher)
+
 	if err != nil {
 		glog.Errorf("mpd.watch: connect to %v error: %v", configuration.MPDConf.Host, err.Error())
 		return err
@@ -130,9 +147,8 @@ func (m *MPD) Close() {
 
 // GetStatus connect to mpd and get current status
 func MPDGetStatus() (s *MPDStatus) {
-	s = &MPDStatus{
-		Flags: "ERR",
-	}
+	s = mpdStatusFree.Get().(*MPDStatus)
+	s.Flags = "ERR"
 
 	con := mpdConnect()
 	if con == nil {

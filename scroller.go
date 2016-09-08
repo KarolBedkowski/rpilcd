@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"github.com/golang/glog"
 	"strings"
 	"sync"
@@ -8,7 +9,7 @@ import (
 
 type textScrollerLine struct {
 	lineOrg    string
-	line       string
+	line       []byte
 	needScroll bool
 	fixPart    int
 }
@@ -24,26 +25,32 @@ func (tsl *textScrollerLine) set(inp string, width int, fixPart int) {
 	tsl.lineOrg = inp
 	tsl.needScroll = len(inp) > width
 	if tsl.needScroll {
-		tsl.line = inp + " | "
+		tsl.line = append([]byte(inp), ' ', '|', ' ')
 		return
 	}
-	if len(inp) < width {
-		inp += strings.Repeat(" ", width-len(inp))
+	b := []byte(inp)
+	for len(b) < width {
+		b = append(b, ' ')
 	}
-	tsl.line = inp
+	tsl.line = b
 }
 
-func (tsl *textScrollerLine) getAndScroll() string {
+func (tsl *textScrollerLine) getAndScroll() []byte {
 	res := tsl.line
 	if !tsl.needScroll {
 		return res
 	}
+	var newLine []byte
 	if tsl.fixPart > 0 {
-		tsl.line = tsl.line[:tsl.fixPart] + tsl.line[tsl.fixPart+1:] + string(tsl.line[tsl.fixPart])
+		newLine = append(newLine, tsl.line[:tsl.fixPart]...)
+		newLine = append(newLine, tsl.line[tsl.fixPart+1:]...)
+		newLine = append(newLine, tsl.line[tsl.fixPart])
 	} else {
-		tsl.line = tsl.line[1:] + string(tsl.line[0])
+		newLine = append(newLine, tsl.line[1:]...)
+		newLine = append(newLine, tsl.line[0])
 	}
-	return res
+	tsl.line = newLine
+	return newLine
 }
 
 // TextScroller format some text to display in few character display
@@ -56,8 +63,8 @@ type TextScroller struct {
 }
 
 // NewTextScroller create new TextScroller struct
-func NewTextScroller(width, height int) *TextScroller {
-	res := &TextScroller{
+func NewTextScroller(width, height int) TextScroller {
+	res := TextScroller{
 		Width:  width,
 		Height: height,
 	}
@@ -82,12 +89,15 @@ func (t *TextScroller) Set(text string, fixPart int) {
 func (t *TextScroller) Tick() (res string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
+	var result []byte
 
 	for _, l := range t.lines {
-		res += l.getAndScroll()[:t.Width] + "\n"
+		result = append(result, l.getAndScroll()[:t.Width]...)
+		result = append(result, '\n')
 	}
 
-	return strings.TrimRight(res, "\n")
+	result = bytes.TrimRight(result, "\n")
+	return string(result)
 }
 
 // Get current strings
@@ -95,9 +105,13 @@ func (t *TextScroller) Get() (res string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
+	var result []byte
+
 	for _, l := range t.lines {
-		res += l.line[:t.Width] + "\n"
+		result = append(result, l.line[:t.Width]...)
+		result = append(result, '\n')
 	}
 
-	return strings.TrimRight(res, "\n")
+	result = bytes.TrimRight(result, "\n")
+	return string(result)
 }

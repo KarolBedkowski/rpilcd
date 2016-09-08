@@ -128,6 +128,7 @@ func main() {
 			}
 		case msg := <-mpd.Message:
 			scrMgr.UpdateMpdStatus(msg)
+			msg.Free()
 		case <-ticker.C:
 			scrMgr.Tick()
 		}
