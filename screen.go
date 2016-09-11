@@ -198,66 +198,53 @@ func (t *MenuItem) Valid() bool {
 }
 
 type StatusScreen struct {
-	lastMpdMessage *MPDStatus
-	last           []string
+	mpdPlaying bool
+	last       []string
 }
 
 func (s *StatusScreen) Show() (res []string, fixPart int) {
-	if s.lastMpdMessage == nil || !s.lastMpdMessage.Playing || len(s.last) == 0 {
-		if glog.V(1) {
-			glog.Infof("lastMpdMessage = %s", s.lastMpdMessage.String())
-		}
+	if !s.mpdPlaying || len(s.last) == 0 {
 		n := time.Now()
-		res = append(res, loadAvg()+" "+mpdStatusToStr("stop"))
-		res = append(res, n.Format("01-02 15:04:05"))
+		res = append(res, loadAvg()+" "+mpdStatusToStr("stop"), n.Format("01-02 15:04:05"))
 	} else {
 		res = s.last[:]
 	}
 	return
 }
 
+var (
+	linesPlay  = []string{"play", ""}
+	linesStop  = []string{"stop", ""}
+	linesPause = []string{"pause", ""}
+	linesNext  = []string{"next", ""}
+	linesPrev  = []string{"previous", ""}
+	linesMute  = []string{"mute", ""}
+)
+
 func (s *StatusScreen) Action(action string) (result int, screen Screen) {
 	switch action {
 	case configuration.Keys.MPD.Play:
 		MPDPlay(-1)
-		return ActionResultOk, &TextScreen{
-			Lines:   []string{"play", ""},
-			Timeout: 2,
-		}
+		return ActionResultOk, &TextScreen{Lines: linesPlay, Timeout: 2}
 	case configuration.Keys.MPD.Stop:
 		MPDStop()
-		return ActionResultOk, &TextScreen{
-			Lines:   []string{"stop", ""},
-			Timeout: 2,
-		}
+		return ActionResultOk, &TextScreen{Lines: linesStop, Timeout: 2}
 	case configuration.Keys.MPD.Pause:
 		MPDPause()
-		return ActionResultOk, &TextScreen{
-			Lines:   []string{"pause", ""},
-			Timeout: 2,
-		}
+		return ActionResultOk, &TextScreen{Lines: linesPause, Timeout: 2}
 	case configuration.Keys.MPD.Next:
 		MPDNext()
-		return ActionResultOk, &TextScreen{
-			Lines:   []string{"next", ""},
-			Timeout: 2,
-		}
+		return ActionResultOk, &TextScreen{Lines: linesNext, Timeout: 2}
 	case configuration.Keys.MPD.Prev:
 		MPDPrev()
-		return ActionResultOk, &TextScreen{
-			Lines:   []string{"previous", ""},
-			Timeout: 2,
-		}
+		return ActionResultOk, &TextScreen{Lines: linesPrev, Timeout: 2}
 	case configuration.Keys.MPD.VolUp:
 		MPDVolUp()
 	case configuration.Keys.MPD.VolDown:
 		MPDVolDown()
 	case configuration.Keys.MPD.VolMute:
 		MPDVolMute()
-		return ActionResultOk, &TextScreen{
-			Lines:   []string{"mute", ""},
-			Timeout: 2,
-		}
+		return ActionResultOk, &TextScreen{Lines: linesMute, Timeout: 2}
 	}
 	return ActionResultOk, nil
 }
@@ -267,18 +254,19 @@ func (s *StatusScreen) Valid() bool {
 }
 
 func (s *StatusScreen) MpdUpdate(st *MPDStatus) {
-	s.lastMpdMessage = st
 
 	if st == nil {
 		n := time.Now()
+		s.mpdPlaying = false
 		s.last = []string{
 			loadAvg() + " " + mpdStatusToStr(st.Status),
 			n.Format("01-02 15:04:05"),
 		}
 		return
 	}
+	s.mpdPlaying = st.Playing
 
-	if st.Error != "" {
+	if st.Error != "" && !st.Playing {
 		s.last = []string{
 			loadAvg() + " " + mpdStatusToStr(st.Status) + " " + st.Volume,
 			"Err:" + removeNlChars(st.Error),

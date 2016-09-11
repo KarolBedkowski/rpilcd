@@ -170,7 +170,7 @@ func (l *Lcd) ToggleBacklight() {
 		l.hd.BacklightOn()
 		l.backlight = true
 		for i, line := range l.lastLines {
-			l.lastLines[i] = []byte{}
+			l.lastLines[i] = make([]byte, 0, l.Width)
 			l.DisplayLine(i, line)
 		}
 	}

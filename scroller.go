@@ -36,11 +36,10 @@ func (tsl *textScrollerLine) set(inp string, width int, fixPart int) {
 }
 
 func (tsl *textScrollerLine) getAndScroll() []byte {
-	res := tsl.line
 	if !tsl.needScroll {
-		return res
+		return tsl.line
 	}
-	var newLine []byte
+	newLine := make([]byte, 0, len(tsl.line))
 	if tsl.fixPart > 0 {
 		newLine = append(newLine, tsl.line[:tsl.fixPart]...)
 		newLine = append(newLine, tsl.line[tsl.fixPart+1:]...)
@@ -89,7 +88,7 @@ func (t *TextScroller) Set(text string, fixPart int) {
 func (t *TextScroller) Tick() (res string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	var result []byte
+	result := make([]byte, 0, t.Width*2+2)
 
 	for _, l := range t.lines {
 		result = append(result, l.getAndScroll()[:t.Width]...)
@@ -105,7 +104,7 @@ func (t *TextScroller) Get() (res string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	var result []byte
+	result := make([]byte, 0, t.Width*2+2)
 
 	for _, l := range t.lines {
 		result = append(result, l.line[:t.Width]...)
