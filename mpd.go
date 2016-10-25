@@ -152,7 +152,9 @@ func MPDGetStatus() (s *MPDStatus) {
 
 	s.Status = status["state"]
 	s.Playing = s.Status != "stop"
-	if !s.Playing {
+	if s.Playing {
+		s.Flags = ""
+	} else {
 		s.Error = status["error"]
 	}
 	s.Volume = status["volume"]
