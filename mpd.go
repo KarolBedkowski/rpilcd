@@ -380,3 +380,43 @@ func MPDVolMute() {
 		con.SetVolume(0)
 	}
 }
+
+// MPDRepeat toggle mpd repeat flag
+func MPDRepeat() {
+	con := mpdConnect()
+	if con == nil {
+		return
+	}
+	defer connClose(con)
+
+	stat, err := con.Status()
+	if err != nil {
+		glog.Error("MPD.MPDRepeat error: ", err)
+		return
+	}
+
+	repeat := stat["repeat"]
+	if err = con.Repeat(repeat == "0"); err != nil {
+		glog.Error("MPD.MPDRepeat error: ", err)
+	}
+}
+
+// MPDRandom toggle shuffle flag
+func MPDRandom() {
+	con := mpdConnect()
+	if con == nil {
+		return
+	}
+	defer connClose(con)
+
+	stat, err := con.Status()
+	if err != nil {
+		glog.Error("MPD.MPDRandom error: ", err)
+		return
+	}
+
+	random := stat["repeat"]
+	if err = con.Random(random == "0"); err != nil {
+		glog.Error("MPD.MPDRandom error: ", err)
+	}
+}

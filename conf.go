@@ -32,6 +32,8 @@ type (
 			VolUp   string
 			VolDown string
 			VolMute string
+			Repeat  string
+			Random  string
 		}
 	}
 

@@ -245,6 +245,10 @@ func (s *StatusScreen) Action(action string) (result int, screen Screen) {
 	case configuration.Keys.MPD.VolMute:
 		MPDVolMute()
 		return ActionResultOk, &TextScreen{Lines: linesMute, Timeout: 2}
+	case configuration.Keys.MPD.Random:
+		MPDRandom()
+	case configuration.Keys.MPD.Repeat:
+		MPDRepeat()
 	}
 	return ActionResultOk, nil
 }
