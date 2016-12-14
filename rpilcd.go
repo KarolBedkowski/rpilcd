@@ -37,6 +37,7 @@ func main() {
 	//glog.Println(http.ListenAndServe(":6060", nil))
 	//}()
 	soutput := flag.Bool("console", false, "Print on console instead of lcd")
+	lcdOffOnStart := flag.Bool("off-on-start", false, "Turn off lcd on start")
 	flag.Parse()
 
 	systemd.NotifyStatus("starting")
@@ -101,6 +102,10 @@ func main() {
 
 	sigHup := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGHUP)
+
+	if *lcdOffOnStart {
+		scrMgr.NewCommand(configuration.Keys.ToggleLCD)
+	}
 
 	systemd.NotifyReady()
 	systemd.NotifyStatus("running")
