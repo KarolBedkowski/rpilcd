@@ -507,7 +507,7 @@ func (m *MPDCurrPlaylistScreen) Valid() bool {
 }
 
 func cursorScrollUp(cursor, offset, items, step int) (rcursor, roffset int) {
-	if step == 1 || cursor == 0 {
+	if step == 1 || cursor == 0 || cursor > step {
 		cursor -= step
 	} else {
 		cursor = 0
@@ -528,7 +528,7 @@ func cursorScrollUp(cursor, offset, items, step int) (rcursor, roffset int) {
 }
 
 func cursorScrollDown(cursor, offset, items, step int) (rcursor, roffset int) {
-	if step == 1 || cursor == items-1 {
+	if step == 1 || cursor == items-1 || cursor < items-1-step {
 		cursor += step
 	} else {
 		cursor = items - 1
