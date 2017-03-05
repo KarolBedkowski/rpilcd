@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/chbmuc/lirc"
-	"github.com/golang/glog"
 )
 
 type Lirc struct {
@@ -15,7 +14,7 @@ func NewLirc() *Lirc {
 		Events: make(chan string, 5),
 	}
 	if configuration.LircConf.PidFile == "" {
-		glog.Error("Lirc not configured")
+		logger.Error("Lirc not configured")
 		return l
 	}
 
@@ -38,16 +37,14 @@ func NewLirc() *Lirc {
 }
 
 func (l *Lirc) handler(event lirc.Event) {
-	if glog.V(1) {
-		glog.Infof("lirc ir event: %#v", event)
-	}
+	logger.Debugf("lirc ir event: %#v", event)
 	l.Events <- event.Button
 }
 
 func (l *Lirc) Close() {
 	defer func() {
 		if e := recover(); e != nil {
-			glog.Infof("Recover: %v", e)
+			logger.Infof("Recover: %v", e)
 		}
 	}()
 	if l.ir != nil {

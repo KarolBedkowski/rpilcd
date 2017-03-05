@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"github.com/golang/glog"
 	"strings"
 	"sync"
 )
@@ -18,9 +17,7 @@ func (tsl *textScrollerLine) set(inp string, width int, fixPart int) {
 	if inp == tsl.lineOrg {
 		return
 	}
-	if glog.V(1) {
-		glog.Infof("textScrollerLine.set : %+v", inp)
-	}
+	logger.Debugf("textScrollerLine.set : %+v", inp)
 	tsl.fixPart = fixPart
 	tsl.lineOrg = inp
 	tsl.needScroll = len(inp) > width

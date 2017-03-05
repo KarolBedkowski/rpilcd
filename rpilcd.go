@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"github.com/golang/glog"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -34,24 +33,25 @@ type Display interface {
 
 func main() {
 	//go func() {
-	//glog.Println(http.ListenAndServe(":6060", nil))
+	//logger.Println(http.ListenAndServe(":6060", nil))
 	//}()
 	soutput := flag.Bool("console", false, "Print on console instead of lcd")
 	lcdOffOnStart := flag.Bool("off-on-start", false, "Turn off lcd on start")
+	logLevel := flag.Int("log-level", 1, "Log level (3=debug, 2=info, 1=error, 0=silent)")
 	flag.Parse()
+
+	logger.SetLogLevel(*logLevel)
 
 	systemd.NotifyStatus("starting")
 	systemd.AutoWatchdog()
 
-	glog.Infof("RPI LCD ver %s (build %s) starting...", AppVersion, AppDate)
+	logger.Infof("RPI LCD ver %s (build %s) starting...", AppVersion, AppDate)
 
 	err := loadConfiguration()
 	if err != nil {
 		panic(err)
 	}
-	if glog.V(1) {
-		glog.Infof("configuration: %#v", configuration)
-	}
+	logger.Debugf("configuration: %#v", configuration)
 
 	ws := UMServer{
 		Addr: configuration.ServicesConf.TCPServerAddr,
@@ -67,23 +67,23 @@ func main() {
 	if configuration.ServicesConf.HTTPServerAddr != "" {
 		http.Handle("/metrics", prometheus.Handler())
 		http.HandleFunc("/", scrMgr.WebHandler)
-		glog.Infof("webserver starting (%s)...", configuration.ServicesConf.HTTPServerAddr)
+		logger.Infof("webserver starting (%s)...", configuration.ServicesConf.HTTPServerAddr)
 		go http.ListenAndServe(configuration.ServicesConf.HTTPServerAddr, nil)
 	}
 
 	defer func() {
 		if e := recover(); e != nil {
-			glog.Infof("Recover: %v", e)
+			logger.Infof("Recover: %v", e)
 		}
 		systemd.Notify("STOPPING=1\r\nSTATUS=stopping")
-		glog.Info("main.defer: closing lirc")
+		logger.Info("main.defer: closing lirc")
 		lirc.Close()
-		glog.Info("main.defer: closing disp")
+		logger.Info("main.defer: closing disp")
 		scrMgr.Close()
-		glog.Info("main.defer: closing mpd")
+		logger.Info("main.defer: closing mpd")
 		mpd.Close()
 		time.Sleep(2 * time.Second)
-		glog.Info("main.defer: all closed")
+		logger.Info("main.defer: all closed")
 		systemd.NotifyStatus("stopped")
 	}()
 
@@ -93,7 +93,7 @@ func main() {
 
 	time.Sleep(1 * time.Second)
 
-	glog.V(1).Info("main: entering loop")
+	logger.Debugln("main: entering loop")
 
 	ticker := createTicker()
 
@@ -115,7 +115,7 @@ func main() {
 		case _ = <-sig:
 			return
 		case _ = <-sigHup:
-			glog.Info("Reloading configuration")
+			logger.Info("Reloading configuration")
 			ticker.Stop()
 			err := loadConfiguration()
 			if err != nil {

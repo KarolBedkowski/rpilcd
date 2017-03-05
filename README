@@ -2,7 +2,7 @@
  rpilcd 0.x.x
 ++++++++++++++
 
-:Credits: Copyright (c) Karol Będkowski, 2013-2016
+:Credits: Copyright (c) Karol Będkowski, 2013-2017
 :Licence: GPLv2+
 :Status: beta
 :Tags: rpi
@@ -21,7 +21,6 @@ Requirements:
 
    * gompd (github.com/fhs/gompd/mpd)
    * lirc (github.com/chbmuc/lirc)
-   * glog (github.com/golang/glog)
    * github.com/zlowred/embd
    
 

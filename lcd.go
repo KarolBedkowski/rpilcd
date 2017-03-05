@@ -4,7 +4,6 @@ package main
 
 import (
 	"bytes"
-	"github.com/golang/glog"
 	"github.com/zlowred/embd"
 	"github.com/zlowred/embd/controller/hd44780"
 	_ "github.com/zlowred/embd/host/rpi"
@@ -41,7 +40,7 @@ func NewLcd() *Lcd {
 	var l *Lcd
 	defer func() {
 		if e := recover(); e != nil {
-			glog.Infof("NewLcd failed create - recover: %v", e)
+			logger.Infof("NewLcd failed create - recover: %v", e)
 		}
 	}()
 
@@ -52,10 +51,10 @@ func NewLcd() *Lcd {
 	}
 	if configuration.DisplayConf.Display == "i2c" {
 		l.addr = configuration.DisplayConf.I2CAddr
-		glog.V(1).Infof("Starting hd44780 on i2c addr=%d", l.addr)
+		logger.Debugf("Starting hd44780 on i2c addr=%d", l.addr)
 
 		if err := embd.InitI2C(); err != nil {
-			glog.Error("Can't open lcd: ", err.Error())
+			logger.Error("Can't open lcd: ", err.Error())
 			return nil
 		}
 
@@ -73,11 +72,11 @@ func NewLcd() *Lcd {
 			hd44780.EntryIncrement,
 		)
 		if err != nil {
-			glog.Fatal("Can't open i2c lcd: ", err.Error())
+			logger.Fatal("Can't open i2c lcd: ", err.Error())
 			return nil
 		}
 	} else {
-		glog.V(1).Infof("Starting hd44780 on GPIO")
+		logger.Debugf("Starting hd44780 on GPIO")
 		var err error
 		l.hd, err = hd44780.NewGPIO(
 			configuration.DisplayConf.GpioRs,
@@ -95,7 +94,7 @@ func NewLcd() *Lcd {
 			hd44780.EntryIncrement,
 		)
 		if err != nil {
-			glog.Fatal("Can't open gpio lcd: ", err.Error())
+			logger.Fatal("Can't open gpio lcd: ", err.Error())
 			return nil
 		}
 	}
@@ -153,7 +152,7 @@ func (l *Lcd) DisplayLine(line int, text []byte) {
 
 // Close LCD
 func (l *Lcd) Close() {
-	glog.Infof("Lcd.Close")
+	logger.Infof("Lcd.Close")
 }
 
 // ToggleBacklight turn off/on lcd backlight

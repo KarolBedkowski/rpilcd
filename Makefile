@@ -22,7 +22,7 @@ rpilcd_pi: *.go
 	#CGO_ENABLED="0" GOGCCFLAGS="-g -fPIC -march=native -s" GOARCH=arm GOARM=5 go build -o rpilcd -ldflags $(LDFLAGS)
 
 run: 
-	go run *.go -console=true -alsologtostderr
+	go run *.go -console=true -log-level 0
 
 clean:
 	go clean

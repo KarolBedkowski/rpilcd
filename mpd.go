@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"github.com/fhs/gompd/mpd"
-	"github.com/golang/glog"
 	"strconv"
 	"strings"
 	"sync"
@@ -13,7 +12,7 @@ import (
 func mpdConnect() *mpd.Client {
 	con, err := mpd.Dial("tcp", configuration.MPDConf.Host)
 	if err != nil {
-		glog.Error("mpdConnect error: ", err.Error())
+		logger.Error("mpdConnect error: ", err.Error())
 	}
 	return con
 }
@@ -75,12 +74,12 @@ func (m *MPD) watch() (err error) {
 	}(m.watcher)
 
 	if err != nil {
-		glog.Errorf("mpd.watch: connect to %v error: %v", configuration.MPDConf.Host, err.Error())
+		logger.Errorf("mpd.watch: connect to %v error: %v", configuration.MPDConf.Host, err.Error())
 		return err
 	}
 
-	glog.Info("mpd.watch: connected to ", configuration.MPDConf.Host)
-	glog.V(1).Infof("mpd.watch: starting watch")
+	logger.Info("mpd.watch: connected to ", configuration.MPDConf.Host)
+	logger.Debugf("mpd.watch: starting watch")
 
 	m.Message <- MPDGetStatus()
 
@@ -90,13 +89,11 @@ func (m *MPD) watch() (err error) {
 		}
 		select {
 		case _ = <-m.end:
-			glog.Info("mpd.watch: end")
+			logger.Info("mpd.watch: end")
 			m.active = false
 			return
 		case subsystem := <-m.watcher.Event:
-			if glog.V(1) {
-				glog.Info("mpd.watch: event: ", subsystem)
-			}
+			logger.Debugf("mpd.watch: event: ", subsystem)
 			m.Message <- MPDGetStatus()
 			/*
 				switch subsystem {
@@ -107,7 +104,7 @@ func (m *MPD) watch() (err error) {
 				}
 			*/
 		case err := <-m.watcher.Error:
-			//glog.Errorf("mpd.watch: error event: %v", err)
+			//logger.Errorf("mpd.watch: error event: %v", err)
 			return err
 		}
 	}
@@ -119,7 +116,7 @@ func (m *MPD) watch() (err error) {
 func (m *MPD) Connect() (err error) {
 	go func() {
 		defer func() {
-			glog.Infof("mpd.watch: closing")
+			logger.Infof("mpd.watch: closing")
 			if m.watcher != nil {
 				m.watcher.Close()
 				m.watcher = nil
@@ -129,7 +126,7 @@ func (m *MPD) Connect() (err error) {
 
 		for m.active {
 			if err = m.watch(); err != nil {
-				glog.Errorf("mpd.Connect: start watch error: %v", err)
+				logger.Errorf("mpd.Connect: start watch error: %v", err)
 				time.Sleep(5 * time.Second)
 			}
 		}
@@ -139,7 +136,7 @@ func (m *MPD) Connect() (err error) {
 
 // Close MPD client
 func (m *MPD) Close() {
-	glog.V(1).Info("mpd.Close")
+	logger.Debugln("mpd.Close")
 	if m.watcher != nil {
 		m.end <- true
 	}
@@ -154,15 +151,13 @@ func MPDGetStatus() (s *MPDStatus) {
 	if con == nil {
 		return
 	}
-	if glog.V(1) {
-		glog.Info("mpd.GetStatus: connected to ", configuration.MPDConf.Host)
-	}
+	logger.Debugln("mpd.GetStatus: connected to ", configuration.MPDConf.Host)
 
 	defer connClose(con)
 
 	status, err := con.Status()
 	if err != nil {
-		glog.Errorf("mpd.GetStatus: Status error: %v", err.Error())
+		logger.Errorf("mpd.GetStatus: Status error: %v", err.Error())
 		return
 	}
 
@@ -183,12 +178,12 @@ func MPDGetStatus() (s *MPDStatus) {
 
 	song, err := con.CurrentSong()
 	if err != nil {
-		glog.Errorf("mpd.GetStatus: CurrentSong error: %v", err.Error())
+		logger.Errorf("mpd.GetStatus: CurrentSong error: %v", err.Error())
 		return
 	}
 
-	//glog.Infof("Status: %+v", status)
-	//glog.Infof("Song: %+v", song)
+	//logger.Infof("Status: %+v", status)
+	//logger.Infof("Song: %+v", song)
 
 	var res []string
 
@@ -309,7 +304,7 @@ func MPDPlaylists() (pls []string) {
 				pls = append(pls, pl["playlist"])
 			}
 		} else {
-			glog.Error("MPD.Playlists list error: ", err)
+			logger.Error("MPD.Playlists list error: ", err)
 		}
 	}
 	return
@@ -336,7 +331,7 @@ func MPDCurrPlaylist() (pls []string, pos int) {
 	}
 	playlists, err := con.PlaylistInfo(-1, -1)
 	if err != nil {
-		glog.Error("MPD.CurrPlaylist list error: ", err)
+		logger.Error("MPD.CurrPlaylist list error: ", err)
 		return
 	}
 	for _, pl := range playlists {
@@ -360,7 +355,7 @@ func MPDVolMute() {
 
 	stat, err := con.Status()
 	if err != nil {
-		glog.Error("MPD.MPDVolMute error: ", err)
+		logger.Error("MPD.MPDVolMute error: ", err)
 		return
 	}
 
@@ -391,13 +386,13 @@ func MPDRepeat() {
 
 	stat, err := con.Status()
 	if err != nil {
-		glog.Error("MPD.MPDRepeat error: ", err)
+		logger.Error("MPD.MPDRepeat error: ", err)
 		return
 	}
 
 	repeat := stat["repeat"]
 	if err = con.Repeat(repeat == "0"); err != nil {
-		glog.Error("MPD.MPDRepeat error: ", err)
+		logger.Error("MPD.MPDRepeat error: ", err)
 	}
 }
 
@@ -411,12 +406,12 @@ func MPDRandom() {
 
 	stat, err := con.Status()
 	if err != nil {
-		glog.Error("MPD.MPDRandom error: ", err)
+		logger.Error("MPD.MPDRandom error: ", err)
 		return
 	}
 
 	random := stat["repeat"]
 	if err = con.Random(random == "0"); err != nil {
-		glog.Error("MPD.MPDRandom error: ", err)
+		logger.Error("MPD.MPDRandom error: ", err)
 	}
 }

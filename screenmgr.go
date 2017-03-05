@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/golang/glog"
 	"net/http"
 	"strings"
 	"time"
@@ -24,15 +23,15 @@ func NewScreenMgr(console bool) *ScreenMgr {
 
 	if !console && (configuration.DisplayConf.Display == "i2c" ||
 		configuration.DisplayConf.Display == "gpio") {
-		glog.Info("main: starting lcd")
+		logger.Info("main: starting lcd")
 		if lcd := NewLcd(); lcd != nil {
 			d.disp = lcd
 		} else {
-			glog.Info("main: fail back to console")
+			logger.Info("main: fail back to console")
 			d.disp = NewConsole()
 		}
 	} else {
-		glog.Info("main: starting console")
+		logger.Info("main: starting console")
 		d.disp = NewConsole()
 	}
 
@@ -59,7 +58,7 @@ func (d *ScreenMgr) NewCommand(msg string) {
 	}()
 
 	msg = strings.TrimSpace(msg)
-	glog.Infof("NewCommand '%s'", msg)
+	logger.Infof("NewCommand '%s'", msg)
 
 	// globla commands
 	switch msg {
@@ -82,9 +81,7 @@ func (d *ScreenMgr) NewCommand(msg string) {
 	}
 
 	screen := d.currentScreen()
-	if glog.V(1) {
-		glog.Info("current screen: %#v", screen)
-	}
+	logger.Debugf("current screen: %#v", screen)
 	res, nextScreen := screen.Action(msg)
 	switch res {
 	case ActionResultBack:

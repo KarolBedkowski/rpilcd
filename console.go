@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/golang/glog"
 	"strings"
 	"time"
 )
@@ -30,23 +29,23 @@ func (l *Console) Display(msg string) {
 
 // Close console
 func (l *Console) Close() {
-	glog.Infof("Console close")
+	logger.Infof("Console close")
 	l.active = false
 }
 
 func (l *Console) display(text string) {
 	if l.active {
 		for i, l := range strings.Split(text, "\n") {
-			glog.Infof("SimpleDisplay: [%d] '%s'", i, l)
+			logger.Printf("SimpleDisplay: [%d] '%s'", i, l)
 			time.Sleep(consoleDelay)
 		}
 	} else {
-		glog.Infof("SimpleDisplay: not active")
+		logger.Infof("SimpleDisplay: not active")
 	}
 }
 
 func (l *Console) ToggleBacklight() {
-	glog.Infof("SimpleDisplay: toggle backlight")
+	logger.Printf("SimpleDisplay: toggle backlight")
 	l.active = !l.active
 }
 

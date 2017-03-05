@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"github.com/golang/glog"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -151,7 +150,7 @@ func (t *MenuItem) executeInBackground() string {
 
 	process, err := os.StartProcess(t.Cmd, args, attr)
 	if err != nil {
-		glog.Errorf("Start process error: err=%v", err)
+		logger.Errorf("Start process error: err=%v", err)
 		return err.Error()
 	}
 
@@ -160,7 +159,7 @@ func (t *MenuItem) executeInBackground() string {
 		return "<started>"
 	}
 
-	glog.Errorf("Start process release error: err=%v", err)
+	logger.Errorf("Start process release error: err=%v", err)
 	return err.Error()
 }
 
@@ -174,7 +173,7 @@ func (t *MenuItem) execute() (result int, screen Screen) {
 			return ActionResultOk, &TextScreen{Lines: lines}
 		}
 		out, err := exec.Command(t.Cmd, t.Args...).CombinedOutput()
-		glog.Infof("Execute: err=%v, res=%v", err, res)
+		logger.Infof("Execute: err=%v, res=%v", err, res)
 		res = strings.TrimSpace(string(out))
 		if res == "" {
 			res = "<no output>"
@@ -295,7 +294,7 @@ func loadAvg() string {
 			return string(data[:i+2])
 		}
 	}
-	glog.Errorf("main.loadavg error: %v, %v", err, data)
+	logger.Errorf("main.loadavg error: %v, %v", err, data)
 	return ""
 }
 
@@ -317,9 +316,7 @@ func (u *UrgentMsgScreen) AddMsg(msg []string) {
 	defer u.mu.Unlock()
 
 	u.messages = append(u.messages, msg)
-	if glog.V(1) {
-		glog.Infof("AddMsg: %#v", u.messages)
-	}
+	logger.Debugf("AddMsg: %#v", u.messages)
 }
 
 func (u *UrgentMsgScreen) Show() (res []string, fixPart int) {
